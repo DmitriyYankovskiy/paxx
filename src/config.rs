@@ -1,13 +1,15 @@
+use colored::Colorize;
 use serde::{Serialize, Deserialize};
 
-use std::{collections::HashMap, fs, io::{Read, Write}};
+use std::{collections::HashMap, fs, io::{Read, Write}, path::Path};
 
 use crate::paths;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub enum TestingType {
-    DifferenceResults,
     CheckingResults,
+    ComparisonResults,
+    AutoComparisonResults,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -17,7 +19,7 @@ pub struct Config {
 
     pub reference_path: Option<String>,
 
-    pub diff_checker_path: Option<String>,
+    pub comparator_path: Option<String>,
     pub res_checker_path: Option<String>,
 
     pub testing_type: TestingType,
@@ -34,10 +36,10 @@ impl Default for Config {
             reference_path: Some(String::from("reference.cpp")),            
             test_gen_path: String::from("test_gen.cpp"),
 
-            diff_checker_path: Some(String::from("checker.cpp")),
+            comparator_path: Some(String::from("checker.cpp")),
             res_checker_path: None,            
 
-            testing_type: TestingType::DifferenceResults,
+            testing_type: TestingType::ComparisonResults,
 
             args,
         }
@@ -56,5 +58,53 @@ impl Config {
         let mut file = fs::File::create(paths::config()).unwrap();
         let config = serde_yml::to_string(config).unwrap();
         file.write_all(&config.as_bytes()).unwrap();
+    }
+
+    pub fn check(&self) -> bool {
+        let mut error = false;
+        if !Path::new(&self.test_gen_path).exists() {
+            error = true;
+            println!("{} {}", "tests generator".bold().bright_red(), "not found".red());
+        }
+        if !Path::new(&self.solve_path).exists() {
+            error = true;
+            println!("{} {}", "solve code".bold().bright_red(), "not found".red());
+        }
+
+        let testing_type = self.testing_type;
+        match testing_type {
+            TestingType::CheckingResults => {
+                if self.res_checker_path == None || !Path::new(&self.res_checker_path.clone().unwrap()).exists() {
+                    error = true;
+                    println!("{} {}", "result checker".bold().bright_red(), "not found".red());
+                }
+            }
+
+            _ => {}
+        }
+
+        match testing_type {
+            TestingType::ComparisonResults | TestingType::AutoComparisonResults => {
+                if self.reference_path == None || !Path::new(&self.reference_path.clone().unwrap()).exists() {
+                    error = true;
+                    println!("{} {}", "reference code".bold().bright_red(), "not found".red());
+                }
+            }
+
+            _ => {}
+        }
+
+        match testing_type {
+            TestingType::ComparisonResults => {
+                if self.comparator_path == None || !Path::new(&self.comparator_path.clone().unwrap()).exists() {
+                    error = true;
+                    println!("{} {}", "difference checker".bold().bright_red(), "not found".red());
+                }
+            }
+
+            _ => {}
+        }
+    
+        error
     }
 }

@@ -73,8 +73,9 @@ fn cmd(args: &Vec<String>) -> Result<(), ()> {
             if commands::check::all(&config) { return Err(()); }
 
             let mut hashes = Hashes::load(&flags);
-            let _ = commands::build::all(&config, &mut hashes);
+            let build_res = commands::build::all(&config, &mut hashes);
             Hashes::write(&mut hashes);
+            build_res?;
 
             commands::run::all(test_count, &config)?;
         }

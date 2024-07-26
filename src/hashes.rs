@@ -30,7 +30,7 @@ pub struct Hashes {
     pub solve: u64,
     pub reference: Option<u64>,
 
-    pub diff_checker: Option<u64>,
+    pub comparator: Option<u64>,
     pub res_checker: Option<u64>,
 }
 
@@ -59,7 +59,7 @@ impl Default for Hashes {
             solve: 0,
             reference: None,
 
-            diff_checker: None,
+            comparator: None,
             res_checker: None,
         }
     }

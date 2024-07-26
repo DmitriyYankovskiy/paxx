@@ -1,6 +1,6 @@
 use colored::{Color, Colorize};
 
-use std::{cmp::min, fs, process::Command, str::from_utf8};
+use std::{cmp::min, fs, io::{BufReader, Read}, process::Command, str::from_utf8};
 
 use crate::{
     config::{self, Config},
@@ -45,7 +45,7 @@ fn run_exe(path: &String, input: Option<&String>, output: Option<&String>, args:
 fn run(path: &String, input: Option<&String>, output: Option<&String>, args: Vec<&String>, ) -> Result<String, ()> {
     let (path, ext) = path.split_once(".").unwrap();
     match ext {
-        "cpp" | "c++" => {
+        "cpp" | "c++" | "rs" => {
             let path = format!("{}/{}.exe", paths::build_dir(), path); 
             run_exe(&path.to_string(), input, output, args)
         }
@@ -68,9 +68,14 @@ pub fn all(tests_count: usize, config: &Config) -> Result<(), ()> {
             let errors = res_checker(tests_count, config)?;
             errors
         },
-        config::TestingType::DifferenceResults => {
+        config::TestingType::ComparisonResults => {
             reference(tests_count, config)?;
-            let errors = diff_checker(tests_count, config)?;
+            let errors = comparator(tests_count, config)?;
+            errors
+        },
+        config::TestingType::AutoComparisonResults => {
+            reference(tests_count, config)?;
+            let errors = auto_comparator(tests_count)?;
             errors
         },
     };
@@ -174,14 +179,50 @@ fn reference(tests_count: usize, config: &Config) -> Result<(), ()> {
     Ok(())
 }
 
-fn diff_checker(tests_count: usize, config: &Config) -> Result<Vec<usize>, ()> {
-    println!("{}", " - result checking ...");
+fn comparator(tests_count: usize, config: &Config) -> Result<Vec<usize>, ()> {
+    println!("{}", " - comparation ...");
     let mut errors = vec![];
-    let path = config.diff_checker_path.clone().unwrap();
+    let path = config.comparator_path.clone().unwrap();
     for test in 1..= tests_count {
         let input_solve = format!("{}/{}.dat", paths::solves_results_dir(), &test.to_string());
         let input_ref = format!("{}/{}.dat", paths::ref_results_dir(), &test.to_string());
         let output = run(&path, None, None, vec![&input_solve, &input_ref])?;
+        
+        if get_verdict(test, tests_count, output)? {
+            errors.push(test);
+        }
+    }
+    Ok(errors)
+} 
+
+fn auto_comparator(tests_count: usize) -> Result<Vec<usize>, ()> {
+    println!("{}", " - comparation ...");
+    let mut errors = vec![];
+    for test in 1..= tests_count {
+        let input_solve = format!("{}/{}.dat", paths::solves_results_dir(), &test.to_string());
+        let input_ref = format!("{}/{}.dat", paths::ref_results_dir(), &test.to_string());
+
+        let mut reader_solve = BufReader::new(fs::File::open(&input_solve).unwrap());
+        let mut reader_ref = BufReader::new(fs::File::open(&input_ref).unwrap());
+
+        let mut output = String::from("OK");
+
+        loop {
+            let mut buf_solve = [0; 1024];
+            let mut buf_ref = [0; 1024];
+
+            let len_solve = reader_solve.read(&mut buf_solve).unwrap();
+            let len_ref = reader_ref.read(&mut buf_ref).unwrap();
+
+            if buf_solve != buf_ref {
+                output = String::from("ERR");
+            }
+
+            if len_ref == 0 || len_solve == 0 {
+                break;
+            }
+        }
+
         
         if get_verdict(test, tests_count, output)? {
             errors.push(test);

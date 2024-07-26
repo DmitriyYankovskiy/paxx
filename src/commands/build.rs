@@ -19,23 +19,29 @@ pub fn all(config: &Config, hashes: &mut Hashes) -> Result<(), ()> {
         config::TestingType::CheckingResults => {
             childs.push(res_checker(config, hashes)?);
         },
-        config::TestingType::DifferenceResults => {
+        config::TestingType::ComparisonResults => {
             childs.push(reference(config, hashes)?);
-            childs.push(diff_checker(config, hashes)?);
+            childs.push(comparator(config, hashes)?);
+        }
+        config::TestingType::AutoComparisonResults => {
+            childs.push(reference(config, hashes)?);
         }
     };   
 
+    let mut res = Ok(());
+
     for child in childs {
         if let Some((path, mut child)) = child {
-            let res = child.wait().unwrap();
-            if res.success() {
+            let status = child.wait().unwrap();
+            if status.success() {
                 println!(" - {} succesful compiled", path.as_str().bold().cyan());
             } else {
+                res = Err(());
                 println!(" - {} compiled with error", path.as_str().bold().bright_red());
             }
         }
     };
-    Ok(())
+    res
 }
 
 fn test_gen(config: &Config, hashes: &mut Hashes) -> Result<Option<(String, Child)>, ()> {
@@ -76,7 +82,7 @@ fn reference(config: &Config, hashes: &mut Hashes) -> Result<Option<(String, Chi
     let hash = get_hash_file(&path);
 
     if Some(hash) != hashes.reference {
-        remove_all_in_dir(&paths::solves_results_dir());
+        remove_all_in_dir(&paths::ref_results_dir());
 
         hashes.reference = Some(hash);
 
@@ -86,16 +92,13 @@ fn reference(config: &Config, hashes: &mut Hashes) -> Result<Option<(String, Chi
     }  
 }
 
-fn diff_checker(config: &Config, hashes: &mut Hashes) -> Result<Option<(String, Child)>, ()>   {    
-    let path = config.diff_checker_path.clone().unwrap();
+fn comparator(config: &Config, hashes: &mut Hashes) -> Result<Option<(String, Child)>, ()>   {    
+    let path = config.comparator_path.clone().unwrap();
     let hash = get_hash_file(&path);
 
-    if Some(hash) != hashes.diff_checker {
-        remove_all_in_dir(&paths::solves_results_dir());
-
-        hashes.diff_checker = Some(hash);
-
-        Ok(Some((path, compile(&config.diff_checker_path.clone().unwrap(), config)?)))
+    if Some(hash) != hashes.comparator {
+        hashes.comparator = Some(hash);
+        Ok(Some((path, compile(&config.comparator_path.clone().unwrap(), config)?)))
     } else {
         Ok(None)
     }
@@ -106,10 +109,7 @@ fn res_checker(config: &Config, hashes: &mut Hashes) -> Result<Option<(String, C
     let hash = get_hash_file(&path);
 
     if Some(hash) != hashes.res_checker {
-        remove_all_in_dir(&paths::solves_results_dir());
-
         hashes.res_checker = Some(hash);
-
         Ok(Some((path, compile(&config.res_checker_path.clone().unwrap(), config)?)))
     } else {
         Ok(None)

@@ -1,10 +1,11 @@
+mod readme;
 mod config;
 mod hashes;
 mod paths;
 mod commands;
 mod compile;
 
-use std::{env, fs, path::Path};
+use std::{collections::HashSet, env, fs, time::Instant};
 
 use colored::Colorize;
 use config::Config;
@@ -15,6 +16,7 @@ fn index() {
 }
 
 fn cmd(args: &Vec<String>) -> Result<(), ()> {
+    let start_time = Instant::now();
     let command = match args.get(1) {
         Some(c) => c.clone(),
         None => {
@@ -22,6 +24,15 @@ fn cmd(args: &Vec<String>) -> Result<(), ()> {
             return Err(());
         }
     };
+
+    let mut flags = HashSet::<String>::new();
+    for arg in args {
+        if arg.starts_with('-') {
+            flags.insert(arg[1..].to_string());
+        }
+    }
+
+
 
     match command.as_str() {
         "init" => {
@@ -33,21 +44,12 @@ fn cmd(args: &Vec<String>) -> Result<(), ()> {
             if commands::check::all(&config) { return Err(()); }
         }
 
-        "upd" => {
+        "build" => {
             let config = Config::load();
             if commands::check::all(&config) { return Err(()); }
 
-            let mut hashes = Hashes::load();
-            let _ = commands::update::all(&config, &mut hashes);
-            Hashes::write(&mut hashes);
-        }
-
-        "rebuild" => {
-            let config = Config::load();
-            if commands::check::all(&config) { return Err(()); }
-
-            let mut hashes = Hashes::default();
-            let _ = commands::update::all(&config, &mut hashes);
+            let mut hashes = Hashes::load(&flags);
+            let _ = commands::build::all(&config, &mut hashes);
             Hashes::write(&mut hashes);
         }
 
@@ -69,8 +71,9 @@ fn cmd(args: &Vec<String>) -> Result<(), ()> {
 
             let config = Config::load();
             if commands::check::all(&config) { return Err(()); }
-            let mut hashes = Hashes::load();
-            let _ = commands::update::all(&config, &mut hashes);
+
+            let mut hashes = Hashes::load(&flags);
+            let _ = commands::build::all(&config, &mut hashes);
             Hashes::write(&mut hashes);
 
             commands::run::all(test_count, &config)?;
@@ -85,12 +88,15 @@ fn cmd(args: &Vec<String>) -> Result<(), ()> {
         },
     };
 
+
+    let time = start_time.elapsed();
+    println!("--------");
+    println!("complited in {} secs", time.as_secs_f32());
+
     Ok(())
 }
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    cmd(&args);
-
-    println!("--------");
+    let _ = cmd(&args);
 }

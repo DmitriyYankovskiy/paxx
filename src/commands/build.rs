@@ -1,4 +1,4 @@
-use std::process::{Child, ExitStatus};
+use std::process::Child;
 
 use colored::Colorize;
 
@@ -10,7 +10,7 @@ use crate::{
 };
 
 pub fn all(config: &Config, hashes: &mut Hashes) -> Result<(), ()> {
-    println!("{}", "* updating ...".bright_yellow());
+    println!("{}", "building ...".bright_yellow());
     let mut childs = Vec::<Option<(String, Child)>>::new();
     childs.push(test_gen(config, hashes)?);
     childs.push(solve(config, hashes)?);
@@ -29,9 +29,9 @@ pub fn all(config: &Config, hashes: &mut Hashes) -> Result<(), ()> {
         if let Some((path, mut child)) = child {
             let res = child.wait().unwrap();
             if res.success() {
-                println!("{} succesful compiled with status code: {res}", path.as_str().bold().green());
+                println!(" - {} succesful compiled", path.as_str().bold().cyan());
             } else {
-                println!("{} compiled with status code: {res}", path.as_str().bold().bright_red());
+                println!(" - {} compiled with error", path.as_str().bold().bright_red());
             }
         }
     };
@@ -81,8 +81,7 @@ fn reference(config: &Config, hashes: &mut Hashes) -> Result<Option<(String, Chi
         hashes.reference = Some(hash);
 
         Ok(Some((path, compile(&config.reference_path.clone().unwrap(), config)?)))
-    } else {    println!("{}", "<> updating ...".bright_yellow());
-
+    } else {
         Ok(None)
     }  
 }

@@ -1,7 +1,7 @@
 use serde::{Serialize, Deserialize};
 use twox_hash::XxHash64;
 
-use std::{default, fs, hash::Hasher, io::{Read, Write}};
+use std::{collections::HashSet, fs, hash::Hasher, io::{Read, Write}};
 
 use crate::paths;
 
@@ -35,7 +35,10 @@ pub struct Hashes {
 }
 
 impl Hashes {
-    pub fn load() -> Self {
+    pub fn load(flags: &HashSet<String>) -> Self {
+        if flags.contains(&"r".to_string()) {
+            return Default::default();
+        }
         let mut file = fs::File::open(paths::hashes()).unwrap();
         let mut hashes = String::new();
         file.read_to_string(&mut hashes).unwrap();

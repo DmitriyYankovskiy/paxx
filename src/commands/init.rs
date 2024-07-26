@@ -1,9 +1,7 @@
-use std::path::Path;
+use std::{fs, io::Write, path::Path};
 
 use crate::{
-    paths::{self, touch_dir},
-    config::Config,
-    hashes::Hashes,
+    config::Config, hashes::Hashes, paths::{self, touch_dir}, readme
 };
 
 pub fn all() {
@@ -21,5 +19,10 @@ pub fn all() {
     if !Path::new(paths::hashes().as_str()).exists() {
         let mut hashes = Hashes::default();
         Hashes::write(&mut hashes);
+    }
+
+    if !Path::new(paths::readme().as_str()).exists() {
+        let mut file = fs::File::create(paths::readme()).unwrap();
+        file.write(readme::README.as_bytes()).unwrap();
     }
 }

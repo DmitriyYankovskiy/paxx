@@ -25,7 +25,7 @@ pub fn all(config: &Config) -> bool {
         TestingType::DifferenceResults => {
             if config.reference_path == None || !Path::new(&config.reference_path.clone().unwrap()).exists() {
                 error = true;
-                println!("{} {}", "reference code".bold().bright_red(), "not found".red());;
+                println!("{} {}", "reference code".bold().bright_red(), "not found".red());
             }
 
             if config.diff_checker_path == None || !Path::new(&config.diff_checker_path.clone().unwrap()).exists() {

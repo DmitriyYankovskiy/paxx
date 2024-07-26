@@ -1,6 +1,6 @@
 use colored::{Color, Colorize};
 
-use std::{fs, process::{Command, Output}, str::from_utf8};
+use std::{cmp::min, fs, process::Command, str::from_utf8};
 
 use crate::{
     config::{self, Config},
@@ -57,25 +57,41 @@ fn run(path: &String, input: Option<&String>, output: Option<&String>, args: Vec
 }
 
 
-pub fn all(tests_count: usize, config: &Config) -> Result<Vec<usize>, ()> {
-    println!("{}", "* running ...".bright_yellow());
+pub fn all(tests_count: usize, config: &Config) -> Result<(), ()> {
+    println!("{}", "running ...".bright_yellow());
 
     test_gen(tests_count, config)?;
     solve(tests_count, config)?;
     
-    match config.testing_type {
+    let res = match config.testing_type {
         config::TestingType::CheckingResults => {
             let errors = res_checker(tests_count, config)?;
-            Ok(errors)
+            errors
         },
         config::TestingType::DifferenceResults => {
-            Ok(vec![])
+            reference(tests_count, config)?;
+            let errors = diff_checker(tests_count, config)?;
+            errors
         },
+    };
+
+    println!();
+
+    if !res.is_empty() {
+        println!("{}", "errors on test:".red());
+        let cnt = min(res.len(), 2);
+        for i in 0..cnt {
+            print!("{} ", format!("{}", res[i]).bold().bright_red());
+        }
+        println!("{}", "... ".red());
     }
+
+
+    Ok(())
 }
 
 fn test_gen(tests_count: usize, config: &Config) -> Result<(), ()> {
-    println!("{}", "** test generating ...".yellow());
+    println!("{}", " - test generating ...");
     let count = fs::read_dir(paths::tests_dir()).unwrap().count();
     let path = config.test_gen_path.clone();
     if count < tests_count {
@@ -84,13 +100,11 @@ fn test_gen(tests_count: usize, config: &Config) -> Result<(), ()> {
         } 
     }
 
-    println!("{}", "** test succesfully generated".yellow());
-
     Ok(())
 }
 
 fn solve(tests_count: usize, config: &Config) -> Result<(), ()> {
-    println!("{}", "** solving tests ...".yellow());
+    println!("{}", " - solving tests ...");
     let count = fs::read_dir(paths::solves_results_dir()).unwrap().count();
     let path = config.solve_path.clone();
     if count < tests_count {
@@ -99,42 +113,79 @@ fn solve(tests_count: usize, config: &Config) -> Result<(), ()> {
         } 
     }
 
-    println!("{}", "** test succesfully solved".yellow());
-
     Ok(())
 }
 
+fn get_verdict(test: usize, tests_count: usize, mut output: String) -> Result<bool, ()> {
+    output.push(' ');
+    let (verdict, comment) = match output.split_once(" ") {
+        Some(vc) => vc,
+        None => {
+            println!("{} {}: {}", "incorrect".red(), "result checker output".bold().bright_red(), output);
+            return Err(());
+        }
+    };
+
+    let comment = comment.trim();
+
+    let space_cnt = tests_count.to_string().len() - test.to_string().len();
+    let test_string = format!("{}{}", " ".repeat(space_cnt), test.to_string());
+    match verdict.trim() {
+        "OK" => {
+            println!("{}", format!("OK:{test_string}").on_color(Color::TrueColor { r: (35), g: (255), b: (50) }));
+            Ok(false)
+        }
+        "ERR" => {
+            println!("{} {}", format!("ER:{test_string}").on_color(Color::TrueColor { r: (255), g: (0), b: (0) }).bold(), comment);
+            Ok(true)
+        }
+        _ => {
+            println!("{} {}: {}", "incorrect".red(), "result checker verdict".bold().bright_red(), verdict);
+            Err(())
+        }
+    }
+
+}
+
 fn res_checker(tests_count: usize, config: &Config) -> Result<Vec<usize>, ()> {
+    println!("{}", " - result checking ...");
     let mut errors = vec![];
     let path = config.res_checker_path.clone().unwrap();
     for test in 1..= tests_count {
-        let mut output = run(&path, Some(&format!("{}/{}.dat", paths::solves_results_dir(), test)), None, vec![])?;
-        output.push(' ');
-        let (verdict, comment) = match output.split_once(" ") {
-            Some(vc) => vc,
-            None => {
-                println!("{} {}: {}", "incorrect".red(), "result checker output".bold().bright_red(), output);
-                return Err(());
-            }
-        };
-
-        let comment = comment.trim();
-
-        let space_cnt = tests_count.to_string().len() - test.to_string().len();
-        let test_string = format!("{}{}", " ".repeat(space_cnt), test.to_string());
-        match verdict.trim() {
-            "OK" => {
-                println!("{}", format!("OK:{test_string}").on_color(Color::TrueColor { r: (35), g: (255), b: (50) }));
-            }
-            "ERR" => {
-                println!("{} {}", format!("ER:{test_string}").on_color(Color::TrueColor { r: (255), g: (0), b: (0) }).bold(), comment);
-                errors.push(test);
-            }
-            _ => {
-                println!("{} {}: {}", "incorrect".red(), "result checker verdict".bold().bright_red(), verdict);
-                return Err(());
-            }
+        let output = run(&path, Some(&format!("{}/{}.dat", paths::solves_results_dir(), test)), None, vec![])?;
+       
+        if get_verdict(test, tests_count, output)? {
+            errors.push(test);
         }
     }
     Ok(errors)
 }
+
+fn reference(tests_count: usize, config: &Config) -> Result<(), ()> {
+    println!("{}", " - reference solve tests ...");
+    let count = fs::read_dir(paths::ref_results_dir()).unwrap().count();
+    let path = config.reference_path.clone().unwrap();
+    if count < tests_count {
+        for test in count + 1..=tests_count {
+            run(&path, Some(&format!("{}/{}.dat", paths::tests_dir(), test)), Some(&format!("{}/{}.dat", paths::ref_results_dir(), test)), vec![])?;
+        } 
+    }
+
+    Ok(())
+}
+
+fn diff_checker(tests_count: usize, config: &Config) -> Result<Vec<usize>, ()> {
+    println!("{}", " - result checking ...");
+    let mut errors = vec![];
+    let path = config.diff_checker_path.clone().unwrap();
+    for test in 1..= tests_count {
+        let input_solve = format!("{}/{}.dat", paths::solves_results_dir(), &test.to_string());
+        let input_ref = format!("{}/{}.dat", paths::ref_results_dir(), &test.to_string());
+        let output = run(&path, None, None, vec![&input_solve, &input_ref])?;
+        
+        if get_verdict(test, tests_count, output)? {
+            errors.push(test);
+        }
+    }
+    Ok(errors)
+} 

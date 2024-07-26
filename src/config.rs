@@ -55,6 +55,6 @@ impl Config {
     pub fn write(config: &mut Self) {
         let mut file = fs::File::create(paths::config()).unwrap();
         let config = serde_yml::to_string(config).unwrap();
-        file.write_all(&config.as_bytes());
+        file.write_all(&config.as_bytes()).unwrap();
     }
 }

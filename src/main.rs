@@ -36,8 +36,6 @@ fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
         }
     }
 
-
-
     match command.as_str() {
         "init" => {
             commands::init::all();
@@ -142,7 +140,7 @@ fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
 
     let time = start_time.elapsed();
     println!("--------");
-    println!("complited in {} secs", time.as_secs_f32());
+    println!("complited in {} secs", format!("{}", time.as_secs_f32()).bold().bright_magenta());
 
     Ok(())
 }

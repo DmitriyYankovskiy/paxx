@@ -8,7 +8,7 @@ pub fn all() {
     touch_dir(&paths::dir());
     touch_dir(&paths::build_dir());
     touch_dir(&paths::tests_dir());
-    touch_dir(&paths::solves_results_dir());
+    touch_dir(&paths::solution_results_dir());
     touch_dir(&paths::ref_results_dir());
 
     if !Path::new(paths::config().as_str()).exists() {

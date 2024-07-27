@@ -26,13 +26,16 @@ pub fn compile_rs(path: &String, ext: &String, config: &Config) -> Result<Child,
     let from = format!("{path}.{ext}");
     let to = format!("{}/{}.exe", paths::build_dir(), path);
     let mut args = vec![from, String::from("-o"), to];
-    args.append(&mut config.args[ext].clone());
+    if !config.args[ext].is_empty() {
+        args.append(&mut config.args[ext].clone());
+    }
+
     if let Ok(child) = Command::new("rustc")
-        // .args(args)
+        .args(args)
         .spawn() {
             Ok(child)
         } else {
-            // println!("{} {}", "rs".bold().bright_red(), "args incorrect".red());
+            println!("{} {}", "rs".bold().bright_red(), "args incorrect".red());
             Err(())
         }
 }

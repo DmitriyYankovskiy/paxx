@@ -15,7 +15,9 @@ fn index() {
     println!("{} {}", "stress testing manager", "PAXX ".bold().on_purple());
 }
 
-fn cmd(args: &Vec<String>) -> Result<(), ()> {
+type Flags = HashSet<String>;
+
+fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
     let start_time = Instant::now();
     let command = match args.get(1) {
         Some(c) => c.clone(),
@@ -25,7 +27,7 @@ fn cmd(args: &Vec<String>) -> Result<(), ()> {
         }
     };
 
-    let mut flags = HashSet::<String>::new();
+    let mut flags = Flags::new();
     for arg in args {
         if arg.starts_with('-') {
             flags.insert(arg[1..].to_string());
@@ -58,13 +60,13 @@ fn cmd(args: &Vec<String>) -> Result<(), ()> {
             let arg2 = if let Some(arg2) = arg2 {
                 arg2.clone()
             } else {
-                println!("{} {}", "test count".bold().bright_red(), "not found".red());
+                println!("{} {}", "tests count".bold().bright_red(), "not found".red());
                 return Err(());
             }; 
             let test_count: usize = match arg2.parse() {
                 Ok(count) => count,
                 Err(_) => {
-                    println!("{} {}", "incorrect".red(), "test count".bold().bright_red());
+                    println!("{} {}", "incorrect".red(), "tests count".bold().bright_red());
                     return Err(());
                 }
             };
@@ -77,7 +79,51 @@ fn cmd(args: &Vec<String>) -> Result<(), ()> {
             Hashes::write(&mut hashes);
             build_res?;
 
-            commands::run::all(test_count, &config)?;
+            commands::run::all(test_count, None, &config, &flags)?;
+        }
+
+        "catch" => {
+            let arg2 = args.get(2);
+            let arg2 = if let Some(arg2) = arg2 {
+                arg2.clone()
+            } else {
+                println!("{} {}", "tests count".bold().bright_red(), "not found".red());
+                return Err(());
+            }; 
+
+            let arg3 = args.get(3);
+            let arg3 = if let Some(arg3) = arg3 {
+                arg3.clone()
+            } else {
+                println!("{} {}", "errors count".bold().bright_red(), "not found".red());
+                return Err(());
+            };
+
+            let tests_count: usize = match arg2.parse() {
+                Ok(count) => count,
+                Err(_) => {
+                    println!("{} {}", "incorrect".red(), "tests count".bold().bright_red());
+                    return Err(());
+                }
+            };
+
+            let errors_count: usize = match arg3.parse() {
+                Ok(count) => count,
+                Err(_) => {
+                    println!("{} {}", "incorrect".red(), "errors count".bold().bright_red());
+                    return Err(());
+                }
+            };
+
+            let config = Config::load();
+            if commands::check::all(&config) { return Err(()); }
+
+            let mut hashes = Hashes::load(&flags);
+            let build_res = commands::build::all(&config, &mut hashes);
+            Hashes::write(&mut hashes);
+            build_res?;
+
+            commands::run::all(tests_count, Some(errors_count), &config, &flags)?;
         }
 
         "remove" => {

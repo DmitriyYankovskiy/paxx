@@ -13,7 +13,7 @@ pub fn all(config: &Config, hashes: &mut Hashes) -> Result<(), ()> {
     println!("{}", "building ...".bright_yellow());
     let mut childs = Vec::<Option<(String, Child)>>::new();
     childs.push(test_gen(config, hashes)?);
-    childs.push(solve(config, hashes)?);
+    childs.push(solution(config, hashes)?);
     
     match config.testing_type {
         config::TestingType::CheckingResults => {
@@ -51,27 +51,27 @@ fn test_gen(config: &Config, hashes: &mut Hashes) -> Result<Option<(String, Chil
     if hash != hashes.test_gen {
         remove_all_in_dir(&paths::tests_dir());
 
-        remove_all_in_dir(&paths::solves_results_dir());
+        remove_all_in_dir(&paths::solution_results_dir());
         remove_all_in_dir(&paths::ref_results_dir());
 
+        let res = Ok(Some((path, compile(&config.test_gen_path, config)?)));
         hashes.test_gen = hash;
-
-        Ok(Some((path, compile(&config.test_gen_path, config)?)))
+        res
     } else {
         Ok(None)
     }    
 }
 
-fn solve(config: &Config, hashes: &mut Hashes) -> Result<Option<(String, Child)>, ()>   {    
-    let path = config.solve_path.clone();
+fn solution(config: &Config, hashes: &mut Hashes) -> Result<Option<(String, Child)>, ()>   {    
+    let path = config.solution_path.clone();
     let hash = get_hash_file(&path);
 
-    if hash != hashes.solve {
-        remove_all_in_dir(&paths::solves_results_dir());
+    if hash != hashes.solution {
+        remove_all_in_dir(&paths::solution_results_dir());
 
-        hashes.solve = hash;
-
-        Ok(Some((path, compile(&config.solve_path, config)?)))
+        let res = Ok(Some((path, compile(&config.solution_path, config)?)));
+        hashes.solution = hash;
+        res
     } else {
         Ok(None)
     }    
@@ -84,9 +84,11 @@ fn reference(config: &Config, hashes: &mut Hashes) -> Result<Option<(String, Chi
     if Some(hash) != hashes.reference {
         remove_all_in_dir(&paths::ref_results_dir());
 
+        let res = Ok(Some((path, compile(&config.reference_path.clone().unwrap(), config)?)));
+
         hashes.reference = Some(hash);
 
-        Ok(Some((path, compile(&config.reference_path.clone().unwrap(), config)?)))
+        res
     } else {
         Ok(None)
     }  
@@ -97,8 +99,10 @@ fn comparator(config: &Config, hashes: &mut Hashes) -> Result<Option<(String, Ch
     let hash = get_hash_file(&path);
 
     if Some(hash) != hashes.comparator {
+        let res = Ok(Some((path, compile(&config.comparator_path.clone().unwrap(), config)?)));
         hashes.comparator = Some(hash);
-        Ok(Some((path, compile(&config.comparator_path.clone().unwrap(), config)?)))
+
+        res
     } else {
         Ok(None)
     }
@@ -109,8 +113,10 @@ fn res_checker(config: &Config, hashes: &mut Hashes) -> Result<Option<(String, C
     let hash = get_hash_file(&path);
 
     if Some(hash) != hashes.res_checker {
+        let res = Ok(Some((path, compile(&config.res_checker_path.clone().unwrap(), config)?)));
         hashes.res_checker = Some(hash);
-        Ok(Some((path, compile(&config.res_checker_path.clone().unwrap(), config)?)))
+
+        res
     } else {
         Ok(None)
     }

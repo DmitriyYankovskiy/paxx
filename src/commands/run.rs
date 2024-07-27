@@ -4,7 +4,7 @@ use std::{cmp::min, fs, io::{BufReader, Read}, process::Command, str::from_utf8}
 
 use crate::{
     config::{self, Config},
-    paths,
+    paths, Flags,
 };
 
 fn run_exe(path: &String, input: Option<&String>, output: Option<&String>, args: Vec<&String>) -> Result<String, ()> {
@@ -57,36 +57,60 @@ fn run(path: &String, input: Option<&String>, output: Option<&String>, args: Vec
 }
 
 
-pub fn all(tests_count: usize, config: &Config) -> Result<(), ()> {
+pub fn all<'a>(tests_count: usize, errors_count: Option<usize>, config: &Config, flags: &'a Flags) -> Result<(), ()> {
     println!("{}", "running ...".bright_yellow());
+    let mut errors = Vec::<usize>::new();
+    let created_tests_count = fs::read_dir(paths::tests_dir()).unwrap().count();
+    let created_solution_res_count = fs::read_dir(paths::solution_results_dir()).unwrap().count();
+    let created_reference_res_count = fs::read_dir(paths::ref_results_dir()).unwrap().count();
 
-    test_gen(tests_count, config)?;
-    solve(tests_count, config)?;
-    
-    let res = match config.testing_type {
-        config::TestingType::CheckingResults => {
-            let errors = res_checker(tests_count, config)?;
-            errors
-        },
-        config::TestingType::ComparisonResults => {
-            reference(tests_count, config)?;
-            let errors = comparator(tests_count, config)?;
-            errors
-        },
-        config::TestingType::AutoComparisonResults => {
-            reference(tests_count, config)?;
-            let errors = auto_comparator(tests_count)?;
-            errors
-        },
-    };
+    'tests: for test_number in 1..=tests_count {
+        if test_number > created_tests_count {
+            test_gen(test_number, config)?;
+        }
+        if test_number > created_solution_res_count {
+            solution(test_number, config)?;
+        }
+
+        let res = match config.testing_type {
+            config::TestingType::CheckingResults => {
+                let error = res_checker(test_number, tests_count, config, flags)?;
+                error
+            },
+            config::TestingType::ComparisonResults => {
+                if test_number > created_reference_res_count {
+                    reference(test_number, config)?;
+                }
+                let error = comparator(test_number, tests_count, config, flags)?;
+                error
+            },
+            config::TestingType::AutoComparisonResults => {
+                if test_number > created_reference_res_count {
+                    reference(test_number, config)?;
+                }
+                let error = auto_comparator(test_number, tests_count, flags)?;
+                error
+            },
+        };
+
+        if let Some(error) = res {
+            errors.push(error);
+        }
+
+        if let Some(errors_count) = errors_count {
+            if errors.len() >= errors_count {
+                break 'tests;
+            }
+        }
+    }
 
     println!();
 
-    if !res.is_empty() {
+    if !errors.is_empty() {
         println!("{}", "errors on test:".red());
-        let cnt = min(res.len(), 2);
+        let cnt = min(errors.len(), 2);
         for i in 0..cnt {
-            print!("{} ", format!("{}", res[i]).bold().bright_red());
+            print!("{} ", format!("{}", errors[i]).bold().bright_red());
         }
         println!("{}", "... ".red());
     }
@@ -95,33 +119,21 @@ pub fn all(tests_count: usize, config: &Config) -> Result<(), ()> {
     Ok(())
 }
 
-fn test_gen(tests_count: usize, config: &Config) -> Result<(), ()> {
-    println!("{}", " - test generating ...");
-    let count = fs::read_dir(paths::tests_dir()).unwrap().count();
+fn test_gen(test_number: usize, config: &Config) -> Result<(), ()> {
     let path = config.test_gen_path.clone();
-    if count < tests_count {
-        for test in count + 1..=tests_count {
-            run(&path, None, Some(&format!("{}/{}.dat", paths::tests_dir(), test)), vec![&test.to_string()])?;
-        } 
-    }
+    run(&path, None, Some(&format!("{}/{}.dat", paths::tests_dir(), test_number)), vec![&test_number.to_string()])?;
 
     Ok(())
 }
 
-fn solve(tests_count: usize, config: &Config) -> Result<(), ()> {
-    println!("{}", " - solving tests ...");
-    let count = fs::read_dir(paths::solves_results_dir()).unwrap().count();
-    let path = config.solve_path.clone();
-    if count < tests_count {
-        for test in count + 1..=tests_count {
-            run(&path, Some(&format!("{}/{}.dat", paths::tests_dir(), test)), Some(&format!("{}/{}.dat", paths::solves_results_dir(), test)), vec![])?;
-        } 
-    }
+fn solution(test_number: usize, config: &Config) -> Result<(), ()> {
+    let path = config.solution_path.clone();
+    run(&path, Some(&format!("{}/{}.dat", paths::tests_dir(), test_number)), Some(&format!("{}/{}.dat", paths::solution_results_dir(), test_number)), vec![])?;
 
     Ok(())
 }
 
-fn get_verdict(test: usize, tests_count: usize, mut output: String) -> Result<bool, ()> {
+fn get_verdict(test: usize, tests_count: usize, mut output: String, flags: &Flags) -> Result<bool, ()> {
     output.push(' ');
     let (verdict, comment) = match output.split_once(" ") {
         Some(vc) => vc,
@@ -137,7 +149,9 @@ fn get_verdict(test: usize, tests_count: usize, mut output: String) -> Result<bo
     let test_string = format!("{}{}", " ".repeat(space_cnt), test.to_string());
     match verdict.trim() {
         "OK" => {
-            println!("{}", format!("OK:{test_string}").on_color(Color::TrueColor { r: (35), g: (255), b: (50) }));
+            if !flags.contains("t") {
+                println!("{}", format!("OK:{test_string}").on_color(Color::TrueColor { r: (35), g: (255), b: (50) }));
+            }
             Ok(false)
         }
         "ERR" => {
@@ -152,81 +166,66 @@ fn get_verdict(test: usize, tests_count: usize, mut output: String) -> Result<bo
 
 }
 
-fn res_checker(tests_count: usize, config: &Config) -> Result<Vec<usize>, ()> {
-    println!("{}", " - result checking ...");
-    let mut errors = vec![];
+fn res_checker(test_number: usize, tests_count: usize, config: &Config, flags: &Flags) -> Result<Option<usize>, ()> {
+    let mut error = None;
     let path = config.res_checker_path.clone().unwrap();
-    for test in 1..= tests_count {
-        let output = run(&path, Some(&format!("{}/{}.dat", paths::solves_results_dir(), test)), None, vec![])?;
-       
-        if get_verdict(test, tests_count, output)? {
-            errors.push(test);
-        }
+    let output = run(&path, Some(&format!("{}/{}.dat", paths::solution_results_dir(), test_number)), None, vec![])?;
+    
+    if get_verdict(test_number, tests_count, output, flags)? {
+        error = Some(test_number);
     }
-    Ok(errors)
+    Ok(error)
 }
 
-fn reference(tests_count: usize, config: &Config) -> Result<(), ()> {
-    println!("{}", " - reference solve tests ...");
-    let count = fs::read_dir(paths::ref_results_dir()).unwrap().count();
+fn reference(test_number: usize, config: &Config) -> Result<(), ()> {
     let path = config.reference_path.clone().unwrap();
-    if count < tests_count {
-        for test in count + 1..=tests_count {
-            run(&path, Some(&format!("{}/{}.dat", paths::tests_dir(), test)), Some(&format!("{}/{}.dat", paths::ref_results_dir(), test)), vec![])?;
-        } 
-    }
+    run(&path, Some(&format!("{}/{}.dat", paths::tests_dir(), test_number)), Some(&format!("{}/{}.dat", paths::ref_results_dir(), test_number)), vec![])?;
 
     Ok(())
 }
 
-fn comparator(tests_count: usize, config: &Config) -> Result<Vec<usize>, ()> {
-    println!("{}", " - comparation ...");
-    let mut errors = vec![];
+fn comparator(test_number: usize, tests_count: usize, config: &Config, flags: &Flags) -> Result<Option<usize>, ()> {
+    let mut error = None;
     let path = config.comparator_path.clone().unwrap();
-    for test in 1..= tests_count {
-        let input_solve = format!("{}/{}.dat", paths::solves_results_dir(), &test.to_string());
-        let input_ref = format!("{}/{}.dat", paths::ref_results_dir(), &test.to_string());
-        let output = run(&path, None, None, vec![&input_solve, &input_ref])?;
-        
-        if get_verdict(test, tests_count, output)? {
-            errors.push(test);
-        }
+    let input_solution = format!("{}/{}.dat", paths::solution_results_dir(), &test_number.to_string());
+    let input_ref = format!("{}/{}.dat", paths::ref_results_dir(), &test_number.to_string());
+    let output = run(&path, None, None, vec![&input_solution, &input_ref])?;
+    
+    if get_verdict(test_number, tests_count, output, flags)? {
+        error = Some(test_number);
     }
-    Ok(errors)
+    Ok(error)
 } 
 
-fn auto_comparator(tests_count: usize) -> Result<Vec<usize>, ()> {
-    println!("{}", " - comparation ...");
-    let mut errors = vec![];
-    for test in 1..= tests_count {
-        let input_solve = format!("{}/{}.dat", paths::solves_results_dir(), &test.to_string());
-        let input_ref = format!("{}/{}.dat", paths::ref_results_dir(), &test.to_string());
+fn auto_comparator(test_number: usize, tests_count: usize, flags: &Flags) -> Result<Option<usize>, ()> {
+    let mut error = None;
+    let input_solution = format!("{}/{}.dat", paths::solution_results_dir(), &test_number.to_string());
+    let input_ref = format!("{}/{}.dat", paths::ref_results_dir(), &test_number.to_string());
 
-        let mut reader_solve = BufReader::new(fs::File::open(&input_solve).unwrap());
-        let mut reader_ref = BufReader::new(fs::File::open(&input_ref).unwrap());
+    let mut reader_solution = BufReader::new(fs::File::open(&input_solution).unwrap());
+    let mut reader_ref = BufReader::new(fs::File::open(&input_ref).unwrap());
 
-        let mut output = String::from("OK");
+    let mut output = String::from("OK");
 
-        loop {
-            let mut buf_solve = [0; 1024];
-            let mut buf_ref = [0; 1024];
+    loop {
+        let mut buf_solution = [0; 1024];
+        let mut buf_ref = [0; 1024];
 
-            let len_solve = reader_solve.read(&mut buf_solve).unwrap();
-            let len_ref = reader_ref.read(&mut buf_ref).unwrap();
+        let len_solution = reader_solution.read(&mut buf_solution).unwrap();
+        let len_ref = reader_ref.read(&mut buf_ref).unwrap();
 
-            if buf_solve != buf_ref {
-                output = String::from("ERR");
-            }
-
-            if len_ref == 0 || len_solve == 0 {
-                break;
-            }
+        if buf_solution != buf_ref {
+            output = String::from("ERR");
         }
 
-        
-        if get_verdict(test, tests_count, output)? {
-            errors.push(test);
+        if len_ref == 0 || len_solution == 0 {
+            break;
         }
     }
-    Ok(errors)
+
+    
+    if get_verdict(test_number, tests_count, output, flags)? {
+        error = Some(test_number);
+    }
+    Ok(error)
 } 

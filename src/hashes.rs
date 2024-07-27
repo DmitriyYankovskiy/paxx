@@ -1,9 +1,9 @@
 use serde::{Serialize, Deserialize};
 use twox_hash::XxHash64;
 
-use std::{collections::HashSet, fs, hash::Hasher, io::{Read, Write}};
+use std::{fs, hash::Hasher, io::{Read, Write}};
 
-use crate::paths;
+use crate::{paths, Flags};
 
 const SEED: u64 = 'p' as u64 + 'a' as u64 + 'x' as u64 + 'x' as u64;
 
@@ -27,7 +27,7 @@ pub fn get_hash_file(path: &String) -> u64 {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Hashes {
     pub test_gen: u64,
-    pub solve: u64,
+    pub solution: u64,
     pub reference: Option<u64>,
 
     pub comparator: Option<u64>,
@@ -35,8 +35,8 @@ pub struct Hashes {
 }
 
 impl Hashes {
-    pub fn load(flags: &HashSet<String>) -> Self {
-        if flags.contains(&"r".to_string()) {
+    pub fn load(flags: &Flags) -> Self {
+        if flags.contains("r") {
             return Default::default();
         }
         let mut file = fs::File::open(paths::hashes()).unwrap();
@@ -56,7 +56,7 @@ impl Default for Hashes {
     fn default() -> Self {
         Self {
             test_gen: 0,
-            solve: 0,
+            solution: 0,
             reference: None,
 
             comparator: None,

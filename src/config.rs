@@ -15,7 +15,7 @@ pub enum TestingType {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {
     pub test_gen_path: String,
-    pub solve_path: String,
+    pub solution_path: String,
 
     pub reference_path: Option<String>,
 
@@ -30,9 +30,13 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         let mut args = HashMap::new();
-        args.insert("cpp".to_string(), vec!["-D".to_string(), "LOCAL".to_string(), "-D".to_string(), "STRESS".to_string()]);
+        args.insert("cpp".to_string(), vec![
+            "-D".to_string(),
+            "STRESS".to_string()],
+        );
+        args.insert("rs".to_string(), vec![]);
         Self {
-            solve_path: String::from("solve.cpp"),
+            solution_path: String::from("solution.cpp"),
             reference_path: Some(String::from("reference.cpp")),            
             test_gen_path: String::from("test_gen.cpp"),
 
@@ -66,9 +70,9 @@ impl Config {
             error = true;
             println!("{} {}", "tests generator".bold().bright_red(), "not found".red());
         }
-        if !Path::new(&self.solve_path).exists() {
+        if !Path::new(&self.solution_path).exists() {
             error = true;
-            println!("{} {}", "solve code".bold().bright_red(), "not found".red());
+            println!("{} {}", "solution code".bold().bright_red(), "not found".red());
         }
 
         let testing_type = self.testing_type;

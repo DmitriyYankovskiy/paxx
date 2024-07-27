@@ -17,6 +17,8 @@ fn index() {
 
 type Flags = HashSet<String>;
 
+
+
 fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
     let start_time = Instant::now();
     let command = match args.get(1) {
@@ -39,16 +41,20 @@ fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
     match command.as_str() {
         "init" => {
             commands::init::all();
-        },
+        }
 
         "check" => {
-            let config = Config::load();
-            if commands::check::all(&config) { return Err(()); }
+            if flags.contains("r") {
+                Config::write(&mut Config::default());
+            } 
+            match Config::load() {
+                Ok(_) => println!("{}", "all right".bold().green()),
+                Err(_) => {},
+            };
         }
 
         "build" => {
-            let config = Config::load();
-            if commands::check::all(&config) { return Err(()); }
+            let config = Config::load()?;
 
             let mut hashes = Hashes::load(&flags);
             let _ = commands::build::all(&config, &mut hashes);
@@ -71,8 +77,7 @@ fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
                 }
             };
 
-            let config = Config::load();
-            if commands::check::all(&config) { return Err(()); }
+            let config = Config::load()?;
 
             let mut hashes = Hashes::load(&flags);
             let build_res = commands::build::all(&config, &mut hashes);
@@ -115,8 +120,7 @@ fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
                 }
             };
 
-            let config = Config::load();
-            if commands::check::all(&config) { return Err(()); }
+            let config = Config::load()?;
 
             let mut hashes = Hashes::load(&flags);
             let build_res = commands::build::all(&config, &mut hashes);

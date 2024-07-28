@@ -139,8 +139,8 @@ fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
 
 
     let time = start_time.elapsed();
-    println!("--------");
-    println!("complited in {} secs", format!("{}", time.as_secs_f32()).bold().bright_magenta());
+    println!();
+    println!("complited in {} secs", format!("{:.3}", (time.as_secs_f32() * 1000.0).ceil()/1000.0).bold().bright_magenta());
 
     Ok(())
 }

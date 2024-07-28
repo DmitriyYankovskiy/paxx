@@ -59,6 +59,7 @@ fn run(path: &String, input: Option<&String>, output: Option<&String>, args: Vec
 
 pub fn all<'a>(tests_count: usize, errors_count: Option<usize>, config: &Config, flags: &'a Flags) -> Result<(), ()> {
     println!("{}", "running ...".bright_yellow());
+    println!();
     let mut errors = Vec::<usize>::new();
     let created_tests_count = fs::read_dir(paths::tests_dir()).unwrap().count();
     let created_solution_res_count = fs::read_dir(paths::solution_results_dir()).unwrap().count();
@@ -150,12 +151,12 @@ fn get_verdict(test: usize, tests_count: usize, mut output: String, flags: &Flag
     match verdict.trim() {
         "OK" => {
             if !flags.contains("t") {
-                println!("{}", format!("OK:{test_string}").on_color(Color::TrueColor { r: (35), g: (255), b: (50) }));
+                println!("{}", format!("OK:{test_string} "));
             }
             Ok(false)
         }
         "ERR" => {
-            println!("{} {}", format!("ER:{test_string}").on_color(Color::TrueColor { r: (255), g: (0), b: (0) }).bold(), comment);
+            println!("{} {}", format!("ER:{test_string} ").on_color(Color::TrueColor { r: 255, g: 0, b: 0 }).bold().color(Color::TrueColor { r: 0, g: 0, b: 0 }), comment);
             Ok(true)
         }
         _ => {

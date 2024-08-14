@@ -175,6 +175,11 @@ fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
                     }
                     patterns::gen(config.test_gen_path.unwrap(), flags);
                 },
+
+                "edit_cfg_cpp_vscode" => {
+                    patterns::edit_cfg_cpp_vscode(".editorconfig".to_string(), flags);
+                },
+
                 "std" => {
                     let arg3 = args.get(3);
                     let arg3 = if let Some(arg3) = arg3 {
@@ -199,7 +204,7 @@ fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
             Hashes::write(&mut hashes);
             build_res?;
 
-            print!("{}", commands::solo::solution(&Config::load()?)?.bright_blue());
+            commands::solo::solution(&Config::load()?)?;
         }
 
         _ => {

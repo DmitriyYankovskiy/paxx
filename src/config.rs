@@ -150,10 +150,21 @@ impl Config {
     }
 
     pub fn get_args(&self, language: &str) -> Vec<String> {
-        if let Some(args) = self.args.get(language) {
-            args.clone()
-        } else {
-            Vec::new()
+        match self.testing_mode {
+            TestingMode::Manual => {
+                if let Some(args) = self.solo_args.get(language) {
+                    args.clone()
+                } else {
+                    Vec::new()
+                }
+            }
+            _ => {
+                if let Some(args) = self.args.get(language) {
+                    args.clone()
+                } else {
+                    Vec::new()
+                }
+            }
         }
     }
 }

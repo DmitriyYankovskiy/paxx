@@ -1,6 +1,6 @@
 use colored::Colorize;
 
-use std::{fs, process::Command, str::from_utf8};
+use std::{fs, process::Command, str::from_utf8, time::{self, Duration}};
 
 use crate::{paths, compile};
 
@@ -21,40 +21,67 @@ fn run_cmd(path: &str) -> Result<Command, ()> {
     })
 }
 
-pub fn run(path: &String, input: Option<&String>, output: Option<&String>, args: Vec<&String>) -> Result<String, ()> {   
-    let mut cmd = &mut run_cmd(path)?;
+pub struct RunResult {
+    pub output: Option<String>,
+    pub duration: Duration,
+}
+
+pub fn run(path: &String, input: Option<&String>, output: Option<&String>, args: Vec<&String>) -> Result<RunResult, Option<String>> {   
+    let cmd = run_cmd(path);
+    let mut cmd = if let Ok(cmd) = cmd {
+        cmd
+    } else {
+        return Err(None);
+    };
 
     if let Some(input) = input {
-        cmd = cmd.stdin(fs::File::open(input).unwrap());
+        cmd.stdin(fs::File::open(input).unwrap());
     }
     if let Some(output) = output {
-        cmd = cmd.stdout(fs::File::create(output).unwrap());
+        cmd.stdout(fs::File::create(output).unwrap());
     }
     if !args.is_empty() {
-        cmd = cmd.args(args);
+        cmd.args(args);
     }
+    let start_time = time::Instant::now();
     if output == None {
         let output = cmd.output();
         if let Ok(output) = output{
             if output.status.success() {
                 if let Ok(stdout) = from_utf8(&output.stdout) {
-                    Ok(stdout.to_string())
+                    Ok(RunResult{
+                        output: Some(stdout.to_string()),
+                        duration: start_time.elapsed(),
+                    })
                 } else {
-                    Err(())
+                    println!("{}", "incorrect output".red().bold());
+                    Err(None)
                 }
             } else {
-                Err(())
+                println!("{} execute with error: {:#?}", path.bold().bright_red(), output.status);
+                let output =  String::from_utf8(output.stdout);
+                let output = if let Ok(o) = output {
+                    o
+                } else {
+                    println!("{} incorrect output", path.bold().bright_red());
+                    return Err(None);
+                };
+                Err(Some(output))
             }
         } else {
-            Err(())
+            println!("{}", "---".red());
+            Err(None)
         }
     } else {
         let status = cmd.status();
         if let Ok(_) = status {
-            Ok(String::new())
+            Ok(RunResult {
+                output: None,
+                duration: start_time.elapsed(),
+            })
         } else {
-            println!("{} execute with error: {:?}", path.bold().bright_red(), status);
-            Err(())
+            println!("{} execute with error: {:#?}", path.bold().bright_red(), status);
+            Err(None)
         }
     }
 }

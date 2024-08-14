@@ -11,29 +11,36 @@ use crate::{
 
 pub fn all(config: &Config, hashes: &mut Hashes) -> Result<(), ()> {
     println!("{}", "building ...".bright_yellow());
-    let mut childs = Vec::<Option<(String, Child)>>::new();
-    childs.push(test_gen(config, hashes)?);
+    let mut childs = Vec::<Option<(String, Option<Child>)>>::new();
     childs.push(solution(config, hashes)?);
     
-    match config.testing_type {
-        config::TestingType::CheckingResults => {
+    match config.testing_mode {
+        config::TestingMode::CheckingResults => {
+            childs.push(test_gen(config, hashes)?);
             childs.push(res_checker(config, hashes)?);
         },
-        config::TestingType::ComparisonResults => {
+        config::TestingMode::ComparisonResults => {
+            childs.push(test_gen(config, hashes)?);
             childs.push(reference(config, hashes)?);
             childs.push(comparator(config, hashes)?);
         }
-        config::TestingType::AutoComparisonResults => {
+        config::TestingMode::AutoComparisonResults => {
+            childs.push(test_gen(config, hashes)?);
             childs.push(reference(config, hashes)?);
+        }
+        config::TestingMode::Manual => {
         }
     };   
 
     let mut res = Ok(());
 
     for child in childs {
-        if let Some((path, mut child)) = child {
-            let status = child.wait().unwrap();
-            if status.success() {
+        if let Some((path, child)) = child {
+            let mut status = true;
+            if let Some(mut child) = child {
+                status = child.wait().unwrap().success();
+            }
+            if status {
                 println!(" - {} succesful compiled", path.as_str().bold().cyan());
             } else {
                 res = Err(());
@@ -44,8 +51,8 @@ pub fn all(config: &Config, hashes: &mut Hashes) -> Result<(), ()> {
     res
 }
 
-fn test_gen(config: &Config, hashes: &mut Hashes) -> Result<Option<(String, Child)>, ()> {
-    let path = config.test_gen_path.clone();
+fn test_gen(config: &Config, hashes: &mut Hashes) -> Result<Option<(String, Option<Child>)>, ()> {
+    let path = config.test_gen_path.clone().unwrap();
     let hash = get_hash_file(&path);
 
     if hash != hashes.test_gen {
@@ -54,7 +61,8 @@ fn test_gen(config: &Config, hashes: &mut Hashes) -> Result<Option<(String, Chil
         remove_all_in_dir(&paths::solution_results_dir());
         remove_all_in_dir(&paths::ref_results_dir());
 
-        let res = Ok(Some((path, compile(&config.test_gen_path, config)?)));
+        let res = compile(&path, config)?;
+        let res = Ok(Some((path, res)));
         hashes.test_gen = hash;
         res
     } else {
@@ -62,14 +70,15 @@ fn test_gen(config: &Config, hashes: &mut Hashes) -> Result<Option<(String, Chil
     }    
 }
 
-fn solution(config: &Config, hashes: &mut Hashes) -> Result<Option<(String, Child)>, ()>   {    
+fn solution(config: &Config, hashes: &mut Hashes) -> Result<Option<(String, Option<Child>)>, ()>   {    
     let path = config.solution_path.clone();
     let hash = get_hash_file(&path);
 
     if hash != hashes.solution {
         remove_all_in_dir(&paths::solution_results_dir());
 
-        let res = Ok(Some((path, compile(&config.solution_path, config)?)));
+        let res = compile(&path, config)?;
+        let res = Ok(Some((path, res)));
         hashes.solution = hash;
         res
     } else {
@@ -77,45 +86,44 @@ fn solution(config: &Config, hashes: &mut Hashes) -> Result<Option<(String, Chil
     }    
 }
 
-fn reference(config: &Config, hashes: &mut Hashes) -> Result<Option<(String, Child)>, ()>   {    
+fn reference(config: &Config, hashes: &mut Hashes) -> Result<Option<(String, Option<Child>)>, ()>   {    
     let path = config.reference_path.clone().unwrap();
     let hash = get_hash_file(&path);
 
     if Some(hash) != hashes.reference {
         remove_all_in_dir(&paths::ref_results_dir());
 
-        let res = Ok(Some((path, compile(&config.reference_path.clone().unwrap(), config)?)));
-
+        let res = compile(&path, config)?;
+        let res = Ok(Some((path, res)));
         hashes.reference = Some(hash);
-
         res
     } else {
         Ok(None)
     }  
 }
 
-fn comparator(config: &Config, hashes: &mut Hashes) -> Result<Option<(String, Child)>, ()>   {    
+fn comparator(config: &Config, hashes: &mut Hashes) -> Result<Option<(String, Option<Child>)>, ()>   {    
     let path = config.comparator_path.clone().unwrap();
     let hash = get_hash_file(&path);
 
     if Some(hash) != hashes.comparator {
-        let res = Ok(Some((path, compile(&config.comparator_path.clone().unwrap(), config)?)));
+        let res = compile(&path, config)?;
+        let res = Ok(Some((path, res)));
         hashes.comparator = Some(hash);
-
         res
     } else {
         Ok(None)
     }
 } 
 
-fn res_checker(config: &Config, hashes: &mut Hashes) -> Result<Option<(String, Child)>, ()>   {
+fn res_checker(config: &Config, hashes: &mut Hashes) -> Result<Option<(String, Option<Child>)>, ()>   {
     let path = config.res_checker_path.clone().unwrap();
     let hash = get_hash_file(&path);
 
     if Some(hash) != hashes.res_checker {
-        let res = Ok(Some((path, compile(&config.res_checker_path.clone().unwrap(), config)?)));
+        let res = compile(&path, config)?;
+        let res = Ok(Some((path, res)));
         hashes.res_checker = Some(hash);
-
         res
     } else {
         Ok(None)

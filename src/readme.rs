@@ -24,14 +24,14 @@ res check:                              CheckingResults
     input:
         stdin: solve result
     output:
-        stdout: OK/ERR <comment>
+        stdout: OK/WA <comment>
 
 comparison:                             ComparisonResults
     input:
         arg[1] - path to: solve result
         arg[2] - path to: ref result
     output: 
-        stdout: OK/ERR <comment>
+        stdout: OK/WA <comment>
 
 
 ---------------------------------------------------------------------------------

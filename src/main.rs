@@ -4,10 +4,12 @@ mod hashes;
 mod paths;
 mod commands;
 mod compile;
+mod run;
 
 use std::{collections::HashSet, env, fs, time::Instant};
 
 use colored::Colorize;
+use commands::patterns;
 use config::Config;
 use hashes::Hashes;
 
@@ -90,7 +92,7 @@ fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
             let arg2 = if let Some(arg2) = arg2 {
                 arg2.clone()
             } else {
-                println!("{} {}", "tests count".bold().bright_red(), "not found".red());
+                println!("{} {}", "errors count".bold().bright_red(), "not found".red());
                 return Err(());
             }; 
 
@@ -98,11 +100,11 @@ fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
             let arg3 = if let Some(arg3) = arg3 {
                 arg3.clone()
             } else {
-                println!("{} {}", "errors count".bold().bright_red(), "not found".red());
+                println!("{} {}", "tests count".bold().bright_red(), "not found".red());
                 return Err(());
             };
 
-            let tests_count: usize = match arg2.parse() {
+            let tests_count: usize = match arg3.parse() {
                 Ok(count) => count,
                 Err(_) => {
                     println!("{} {}", "incorrect".red(), "tests count".bold().bright_red());
@@ -110,7 +112,7 @@ fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
                 }
             };
 
-            let errors_count: usize = match arg3.parse() {
+            let errors_count: usize = match arg2.parse() {
                 Ok(count) => count,
                 Err(_) => {
                     println!("{} {}", "incorrect".red(), "errors count".bold().bright_red());
@@ -130,6 +132,74 @@ fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
 
         "remove" => {
             fs::remove_dir_all(paths::dir()).unwrap();
+        }
+
+        "get" => {
+            let config = Config::load()?;
+
+            let arg2 = args.get(2);
+            let arg2 = if let Some(arg2) = arg2 {
+                arg2.clone()
+            } else {
+                println!("{} {}", "tests number".bold().bright_red(), "not found".red());
+                return Err(());
+            }; 
+            let test_number: usize = match arg2.parse() {
+                Ok(count) => count,
+                Err(_) => {
+                    println!("{} {}", "incorrect".red(), "tests number".bold().bright_red());
+                    return Err(());
+                }
+            };
+
+
+            commands::get::all(test_number, &config)?;
+        }
+
+        "pat" => {
+            let arg2 = args.get(2);
+            let arg2 = if let Some(arg2) = arg2 {
+                arg2.clone()
+            } else {
+                println!("{} {}", "pattern".bold().bright_red(), "not found".red());
+                return Err(());
+            };
+
+
+            match arg2.as_str() {
+                "gen" => {
+                    let config = Config::load()?;
+                    if let None = config.test_gen_path {
+                        println!("{} {}", "test gen path".bold().bright_red(), "not found".red());
+                        return Err(());
+                    }
+                    patterns::gen(config.test_gen_path.unwrap(), flags);
+                },
+                "std" => {
+                    let arg3 = args.get(3);
+                    let arg3 = if let Some(arg3) = arg3 {
+                        arg3.clone()
+                    } else {
+                        Config::load()?.solution_path
+                    };
+                    patterns::std(arg3, flags);
+                },
+                _ => {
+                    println!("{} {}", "incorrect".red(), "pattern".bold().bright_red());
+                    return Err(());
+                }
+            }
+        }
+
+        "solo" => {
+            let config = Config::load()?;
+
+            let mut hashes = Hashes::load(&flags);
+            let build_res = commands::build::all(&config, &mut hashes);
+            Hashes::write(&mut hashes);
+            build_res?;
+
+            print!("{}", commands::solo::solution(&Config::load()?)?.bright_blue());
         }
 
         _ => {

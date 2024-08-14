@@ -1,63 +1,17 @@
 use colored::{Color, Colorize};
 
-use std::{cmp::min, fs, io::{BufReader, Read}, process::Command, str::from_utf8};
+use std::{cmp::min, fs, io::{BufReader, Read}};
 
 use crate::{
     config::{self, Config},
-    paths, Flags,
+    paths, Flags, run,
 };
 
-fn run_exe(path: &String, input: Option<&String>, output: Option<&String>, args: Vec<&String>) -> Result<String, ()> {
-    let mut cmd = &mut Command::new(format!("./{}", path));
-    if let Some(input) = input {
-        cmd = cmd.stdin(fs::File::open(input).unwrap());
-    }
-    if let Some(output) = output {
-        cmd = cmd.stdout(fs::File::create(output).unwrap());
-    }
-    cmd = cmd.args(args);
-    if output == None {
-        let output = cmd.output();
-        if let Ok(output) = output{
-            if output.status.success() {
-                if let Ok(stdout) = from_utf8(&output.stdout) {
-                    Ok(stdout.to_string())
-                } else {
-                    Err(())
-                }
-            } else {
-                Err(())
-            }
-        } else {
-            Err(())
-        }
-    } else {
-        let status = cmd.status();
-        if let Ok(_) = status {
-            Ok(String::new())
-        } else {
-            Err(())
-        }
-    }
-    
-}
-
-fn run(path: &String, input: Option<&String>, output: Option<&String>, args: Vec<&String>, ) -> Result<String, ()> {
-    let (path, ext) = path.split_once(".").unwrap();
-    match ext {
-        "cpp" | "c++" | "rs" => {
-            let path = format!("{}/{}.exe", paths::build_dir(), path); 
-            run_exe(&path.to_string(), input, output, args)
-        }
-        _ => {
-            println!("{} {}", ext.bold().bright_red(), "is not executable".red());
-            Err(())
-        }
-    }
-}
-
-
 pub fn all<'a>(tests_count: usize, errors_count: Option<usize>, config: &Config, flags: &'a Flags) -> Result<(), ()> {
+    if  let config::TestingMode::Manual = config.testing_mode {
+        println!("cannot run in {} mode", "manual".blue());
+        return Err(());
+    }
     println!("{}", "running ...".bright_yellow());
     println!();
     let mut errors = Vec::<usize>::new();
@@ -73,25 +27,26 @@ pub fn all<'a>(tests_count: usize, errors_count: Option<usize>, config: &Config,
             solution(test_number, config)?;
         }
 
-        let res = match config.testing_type {
-            config::TestingType::CheckingResults => {
+        let res = match config.testing_mode {
+            config::TestingMode::CheckingResults => {
                 let error = res_checker(test_number, tests_count, config, flags)?;
                 error
             },
-            config::TestingType::ComparisonResults => {
+            config::TestingMode::ComparisonResults => {
                 if test_number > created_reference_res_count {
                     reference(test_number, config)?;
                 }
                 let error = comparator(test_number, tests_count, config, flags)?;
                 error
             },
-            config::TestingType::AutoComparisonResults => {
+            config::TestingMode::AutoComparisonResults => {
                 if test_number > created_reference_res_count {
                     reference(test_number, config)?;
                 }
                 let error = auto_comparator(test_number, tests_count, flags)?;
                 error
             },
+            _ => unreachable!()
         };
 
         if let Some(error) = res {
@@ -121,15 +76,15 @@ pub fn all<'a>(tests_count: usize, errors_count: Option<usize>, config: &Config,
 }
 
 fn test_gen(test_number: usize, config: &Config) -> Result<(), ()> {
-    let path = config.test_gen_path.clone();
-    run(&path, None, Some(&format!("{}/{}.dat", paths::tests_dir(), test_number)), vec![&test_number.to_string()])?;
+    let path = config.test_gen_path.clone().unwrap();
+    run::run(&path, None, Some(&format!("{}/{}.dat", paths::tests_dir(), test_number)), vec![&test_number.to_string()])?;
 
     Ok(())
 }
 
 fn solution(test_number: usize, config: &Config) -> Result<(), ()> {
     let path = config.solution_path.clone();
-    run(&path, Some(&format!("{}/{}.dat", paths::tests_dir(), test_number)), Some(&format!("{}/{}.dat", paths::solution_results_dir(), test_number)), vec![])?;
+    run::run(&path, Some(&format!("{}/{}.dat", paths::tests_dir(), test_number)), Some(&format!("{}/{}.dat", paths::solution_results_dir(), test_number)), vec![])?;
 
     Ok(())
 }
@@ -151,12 +106,12 @@ fn get_verdict(test: usize, tests_count: usize, mut output: String, flags: &Flag
     match verdict.trim() {
         "OK" => {
             if !flags.contains("t") {
-                println!("{}", format!("OK:{test_string} "));
+                println!("{}", format!("  OK:{test_string} "));
             }
             Ok(false)
         }
-        "ERR" => {
-            println!("{} {}", format!("ER:{test_string} ").on_color(Color::TrueColor { r: 255, g: 0, b: 0 }).bold().color(Color::TrueColor { r: 0, g: 0, b: 0 }), comment);
+        "WA" => {
+            println!("{} {}", format!("  WA:{test_string} ").on_color(Color::TrueColor { r: 255, g: 0, b: 0 }).bold().color(Color::TrueColor { r: 0, g: 0, b: 0 }), comment);
             Ok(true)
         }
         _ => {
@@ -170,7 +125,7 @@ fn get_verdict(test: usize, tests_count: usize, mut output: String, flags: &Flag
 fn res_checker(test_number: usize, tests_count: usize, config: &Config, flags: &Flags) -> Result<Option<usize>, ()> {
     let mut error = None;
     let path = config.res_checker_path.clone().unwrap();
-    let output = run(&path, Some(&format!("{}/{}.dat", paths::solution_results_dir(), test_number)), None, vec![])?;
+    let output = run::run(&path, Some(&format!("{}/{}.dat", paths::solution_results_dir(), test_number)), None, vec![])?;
     
     if get_verdict(test_number, tests_count, output, flags)? {
         error = Some(test_number);
@@ -180,7 +135,7 @@ fn res_checker(test_number: usize, tests_count: usize, config: &Config, flags: &
 
 fn reference(test_number: usize, config: &Config) -> Result<(), ()> {
     let path = config.reference_path.clone().unwrap();
-    run(&path, Some(&format!("{}/{}.dat", paths::tests_dir(), test_number)), Some(&format!("{}/{}.dat", paths::ref_results_dir(), test_number)), vec![])?;
+    run::run(&path, Some(&format!("{}/{}.dat", paths::tests_dir(), test_number)), Some(&format!("{}/{}.dat", paths::ref_results_dir(), test_number)), vec![])?;
 
     Ok(())
 }
@@ -190,7 +145,7 @@ fn comparator(test_number: usize, tests_count: usize, config: &Config, flags: &F
     let path = config.comparator_path.clone().unwrap();
     let input_solution = format!("{}/{}.dat", paths::solution_results_dir(), &test_number.to_string());
     let input_ref = format!("{}/{}.dat", paths::ref_results_dir(), &test_number.to_string());
-    let output = run(&path, None, None, vec![&input_solution, &input_ref])?;
+    let output = run::run(&path, None, None, vec![&input_solution, &input_ref])?;
     
     if get_verdict(test_number, tests_count, output, flags)? {
         error = Some(test_number);
@@ -216,7 +171,7 @@ fn auto_comparator(test_number: usize, tests_count: usize, flags: &Flags) -> Res
         let len_ref = reader_ref.read(&mut buf_ref).unwrap();
 
         if buf_solution != buf_ref {
-            output = String::from("ERR");
+            output = String::from("WA");
         }
 
         if len_ref == 0 || len_solution == 0 {

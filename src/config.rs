@@ -77,7 +77,10 @@ impl Config {
         file.read_to_string(&mut config).unwrap();
         let config: Config = match serde_yml::from_str(config.as_str()) {
             Ok(cfg) => cfg,
-            Err(_) => return Err(()),
+            Err(_) => {
+                println!("{}", "incorrect config file".bright_red().bold());
+                return Err(())
+            },
         };
 
         let mut error = false;

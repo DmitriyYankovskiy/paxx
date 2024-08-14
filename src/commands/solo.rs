@@ -21,6 +21,7 @@ pub fn solution(config: &Config) -> Result<String, ()> {
         print!("{}", &output.bright_blue());
         Ok(output)
     } else {
+        println!("use {} mode", "Manual".bright_cyan().bold());
         Err(())
     }
 }

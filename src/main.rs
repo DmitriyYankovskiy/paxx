@@ -15,6 +15,9 @@ use hashes::Hashes;
 
 fn index() {
     println!("{} {}", "stress testing manager", "PAXX ".bold().on_purple());
+    println!("{} {}", "stress testing manager", "PAXX ".bold().on_purple());
+    println!("{} {}", "stress testing manager", "PAXX ".bold().on_purple());
+    println!("{} {}", "stress testing manager", "PAXX ".bold().on_purple());
 }
 
 type Flags = HashSet<String>;
@@ -27,7 +30,7 @@ fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
         Some(c) => c.clone(),
         None => {
             index();
-            return Err(());
+            return Ok(());
         }
     };
 
@@ -47,10 +50,9 @@ fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
             if flags.contains("r") {
                 Config::write(&mut Config::default());
             } 
-            match Config::load() {
-                Ok(_) => println!("{}", "all right".bold().green()),
-                Err(_) => {},
-            };
+            if let Ok(_) = Config::load() {
+                println!("{}", "all right".bold().green());
+            }
         }
 
         "build" => {

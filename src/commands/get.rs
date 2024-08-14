@@ -23,6 +23,7 @@ fn test(number: usize) -> Result<(), ()> {
     let file = if let Ok(f) = fs::File::open(&format!("{}/{}.dat", paths::tests_dir(), number)) {
         f
     } else {
+        println!("{} corrupted", "tests".bright_red().bold());
         return Err(());
     };
     let reader = BufReader::new(file);
@@ -41,6 +42,7 @@ fn solution_result(number: usize) -> Result<(), ()> {
     let file = if let Ok(f) = fs::File::open(&format!("{}/{}.dat", paths::solution_results_dir(), number)) {
         f
     } else {
+        println!("{} corrupted", "solution results".bright_red().bold());
         return Err(());
     };
     let reader = BufReader::new(file);
@@ -59,6 +61,7 @@ fn ref_result(number: usize) -> Result<(), ()> {
     let file = if let Ok(f) = fs::File::open(&format!("{}/{}.dat", paths::ref_results_dir(), number)) {
         f
     } else {
+        println!("{} corrupted", "reference results".bright_red().bold());
         return Err(());
     };
     let reader = BufReader::new(file);

@@ -45,32 +45,27 @@ pub fn run(path: &String, input: Option<&String>, output: Option<&String>, args:
     }
     let start_time = time::Instant::now();
     if output == None {
-        let output = cmd.output();
-        if let Ok(output) = output{
-            if output.status.success() {
-                if let Ok(stdout) = from_utf8(&output.stdout) {
-                    Ok(RunResult{
-                        output: Some(stdout.to_string()),
-                        duration: start_time.elapsed(),
-                    })
-                } else {
-                    println!("{}", "incorrect output".red().bold());
-                    Err(None)
-                }
+        let output = cmd.output().unwrap();
+        if output.status.success() {
+            if let Ok(stdout) = from_utf8(&output.stdout) {
+                Ok(RunResult{
+                    output: Some(stdout.to_string()),
+                    duration: start_time.elapsed(),
+                })
             } else {
-                println!("{} execute with error: {:#?}", path.bold().bright_red(), output.status);
-                let output =  String::from_utf8(output.stdout);
-                let output = if let Ok(o) = output {
-                    o
-                } else {
-                    println!("{} incorrect output", path.bold().bright_red());
-                    return Err(None);
-                };
-                Err(Some(output))
+                println!("{}", "incorrect output".red().bold());
+                Err(None)
             }
         } else {
-            println!("{}", "---".red());
-            Err(None)
+            println!("{} execute with error: {:#?}", path.bold().bright_red(), output.status);
+            let output =  String::from_utf8(output.stdout);
+            let output = if let Ok(o) = output {
+                o
+            } else {
+                println!("{} incorrect output", path.bold().bright_red());
+                return Err(None);
+            };
+            Err(Some(output))
         }
     } else {
         let status = cmd.status();

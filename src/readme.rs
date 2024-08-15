@@ -1,4 +1,4 @@
-pub const README: &str = "PAXX
+pub const README: &str = r#"PAXX
 
 ---------------------------------------------------------------------------------
 
@@ -8,7 +8,7 @@ test gen:                               ALL
     output:
         stdout: test
 
-solve:                                  ALL
+solution:                                  ALL
     input: 
         stdin: test
     output:
@@ -36,11 +36,25 @@ comparison:                             ComparisonResults
 
 ---------------------------------------------------------------------------------
 
-config: config.yml:
+config - config.yml:
     testing_type:
     --  ComparisonResults :
         running tests for the solution and the reference solution and comparing the results
     --  AutoComparisonResults :
         running tests for the solution and the reference solution and finding difference between the results
     --  CheckingResults :
-        running tests for the solution and checking results";
+        running tests for the solution and checking results
+
+commands: 
+    init
+    check
+    build
+    run [test count],
+    solo
+    catch [error count] [test limit]
+    get [test number]
+    pat:
+     - gen
+     - std [? path ?]
+     - edit_cfg_c++_vscode 
+"#;

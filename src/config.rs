@@ -141,7 +141,12 @@ impl Config {
     }
 
     pub fn load() -> Result<Self, ()> {
-        let mut file = fs::File::open(paths::config()).unwrap();
+        let mut file = if let Ok(f) = fs::File::open(paths::config()) {
+            f
+        } else {
+            log::error("config", "was corrupted");
+            return Err(());
+        };
         let mut config = String::new();
         file.read_to_string(&mut config).unwrap();
         let config: Config = match serde_yml::from_str(config.as_str()) {

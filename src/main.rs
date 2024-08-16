@@ -13,10 +13,7 @@ use colored::Colorize;
 use log::error;
 
 fn index() {
-    println!("{} {}", "stress testing manager", "PAXX ".bold().on_purple());
-    println!("{} {}", "stress testing manager", "PAXX ".bold().on_purple());
-    println!("{} {}", "stress testing manager", "PAXX ".bold().on_purple());
-    println!("{} {}", "stress testing manager", "PAXX ".bold().on_purple());
+    println!("{} {}", "code manager", "PAXX ".bold().on_purple());
 }
 
 type Flags = HashSet<String>;

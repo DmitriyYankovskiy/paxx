@@ -38,6 +38,7 @@ fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
     }
 
     println!("{}", "PAXX --- >".bold().purple());
+    println!(":");
 
     match command.as_str() {
         "init" => {

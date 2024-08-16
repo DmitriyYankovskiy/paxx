@@ -153,7 +153,7 @@ pub fn pat(args: &Vec<String>, flags: &Flags) -> Result<(), ()> {
             }
         },
 
-        "edit_cfg_cpp_vscode" => {
+        "edit_cfg_c++_vscode" => {
             cmd::pat::edit_cfg_cpp_vscode(&".editorconfig".to_string(), &flags);
         },
 

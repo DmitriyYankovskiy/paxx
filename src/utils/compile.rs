@@ -1,10 +1,7 @@
-use colored::Colorize;
-
 use std::{fs, process::{Child, Command}};
 
 use crate::{
-    config::Config,
-    paths
+    config::Config, log, paths
 };
 
 pub fn executable_ext(source_ext: &str) -> String {
@@ -28,7 +25,7 @@ pub fn compile_cpp(path: &str, ext: &str, config: &Config) -> Result<Child, ()> 
         .spawn() {
         Ok(child)
     } else {
-        println!("{} {}", "c++".bold().bright_red(), "args incorrect".red());
+        log::error("c++ args", "incorrect");
         Err(())
     }
 }
@@ -44,7 +41,7 @@ pub fn compile_rust(path: &str, ext: &str, config: &Config) -> Result<Child, ()>
         .spawn() {
             Ok(child)
         } else {
-            println!("{} {}", "rust".bold().bright_red(), "args incorrect".red());
+            log::error("rust args", "incorrect");
             Err(())
         }
 }
@@ -68,7 +65,7 @@ pub fn compile(path: &String, config: &Config) -> Result<Option<Child>, ()> {
             Ok(None)
         }
         _ => {
-            println!("{} {}", ext.bold().bright_red(), "does not compile".red());
+            log::error(&ext, "does not compile");
             Err(())
         }
     }

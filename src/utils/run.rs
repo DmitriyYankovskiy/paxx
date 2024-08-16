@@ -1,8 +1,6 @@
-use colored::Colorize;
-
 use std::{fs, process::Command, str::from_utf8, time::{self, Duration}};
 
-use crate::{paths, compile};
+use crate::{log::{self, error}, paths, utils::compile};
 
 fn run_cmd(path: &str) -> Result<Command, ()> {
     let (path, ext) = path.split_once(".").unwrap();
@@ -15,7 +13,7 @@ fn run_cmd(path: &str) -> Result<Command, ()> {
             cmd
         },
         _ => {
-            println!("{} {}", ext.bold().bright_red(), "is not executable".red());
+            error(&ext, "is not executable");
             return Err(());
         }
     })
@@ -53,16 +51,17 @@ pub fn run(path: &String, input: Option<&String>, output: Option<&String>, args:
                     duration: start_time.elapsed(),
                 })
             } else {
-                println!("{}", "incorrect output".red().bold());
+                log::error("code output", "incorrect");
                 Err(None)
             }
         } else {
-            println!("{} execute with error: {:#?}", path.bold().bright_red(), output.status);
+            log::error(&path, "execute with error");
+            println!("{:#?}", output.status);
             let output =  String::from_utf8(output.stdout);
             let output = if let Ok(o) = output {
                 o
             } else {
-                println!("{} incorrect output", path.bold().bright_red());
+                log::error(&path, "incorrect output");
                 return Err(None);
             };
             Err(Some(output))
@@ -75,7 +74,8 @@ pub fn run(path: &String, input: Option<&String>, output: Option<&String>, args:
                 duration: start_time.elapsed(),
             })
         } else {
-            println!("{} execute with error: {:#?}", path.bold().bright_red(), status);
+            log::error(&path, "execute with error");
+            println!("{:#?}", status);
             Err(None)
         }
     }

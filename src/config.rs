@@ -1,9 +1,8 @@
-use colored::Colorize;
 use serde::{Serialize, Deserialize};
 
 use std::{collections::HashMap, fs, io::{Read, Write}, path::Path};
 
-use crate::paths;
+use crate::{log, paths};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub enum TestingMode {
@@ -75,7 +74,7 @@ impl Config {
         let mut error = false;
         if !Path::new(&self.solution_path).exists() {
             error = true;
-            println!("{} {}", "solution code".bold().bright_red(), "not found".red());
+            log::error("solution code", "not found");
         }
 
         let testing_mode = self.testing_mode;
@@ -84,7 +83,7 @@ impl Config {
             TestingMode::Manual => {
                 if self.sample_path == None || !Path::new(&self.sample_path.clone().unwrap()).exists() {
                     error = true;
-                    println!("{} {}", "sample".bold().bright_red(), "not found".red());
+                    log::error("sample", "not found");
                 }
             }
             _ => {}
@@ -94,7 +93,7 @@ impl Config {
             TestingMode::ComparisonResults | TestingMode::CheckingResults | TestingMode::AutoComparisonResults => {
                 if self.test_gen_path == None || !Path::new(&self.test_gen_path.clone().unwrap()).exists() {
                     error = true;
-                    println!("{} {}", "tests generator".bold().bright_red(), "not found".red());
+                    log::error("test generator", "not found");
                 }
             }
 
@@ -105,7 +104,7 @@ impl Config {
             TestingMode::CheckingResults => {
                 if self.res_checker_path == None || !Path::new(&self.res_checker_path.clone().unwrap()).exists() {
                     error = true;
-                    println!("{} {}", "result checker".bold().bright_red(), "not found".red());
+                    log::error("result checker", "not found");
                 }
             }
 
@@ -116,7 +115,7 @@ impl Config {
             TestingMode::ComparisonResults | TestingMode::AutoComparisonResults => {
                 if self.reference_path == None || !Path::new(&self.reference_path.clone().unwrap()).exists() {
                     error = true;
-                    println!("{} {}", "reference code".bold().bright_red(), "not found".red());
+                    log::error("reference code", "not found");
                 }
             }
 
@@ -127,7 +126,7 @@ impl Config {
             TestingMode::ComparisonResults => {
                 if self.comparator_path == None || !Path::new(&self.comparator_path.clone().unwrap()).exists() {
                     error = true;
-                    println!("{} {}", "comparator".bold().bright_red(), "not found".red());
+                    log::error("comparator", "not found");
                 }
             }
 
@@ -148,7 +147,7 @@ impl Config {
         let config: Config = match serde_yml::from_str(config.as_str()) {
             Ok(cfg) => cfg,
             Err(_) => {
-                println!("{}", "incorrect config file".bright_red().bold());
+                log::error("config file", "incorrect");
                 return Err(())
             },
         };

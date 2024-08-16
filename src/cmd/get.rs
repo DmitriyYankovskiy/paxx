@@ -2,7 +2,7 @@ use colored::Colorize;
 
 use std::{fs, io::{BufRead, BufReader}};
 
-use crate::{config::Config, paths};
+use crate::{config::Config, log::{self, error}, paths};
 
 pub fn all(number: usize, config: &Config) -> Result<(), ()> {
     test(number)?;
@@ -17,15 +17,15 @@ pub fn all(number: usize, config: &Config) -> Result<(), ()> {
     Ok(())
 }
 
-fn test(number: usize) -> Result<(), ()> {
-    println!();
-    println!("{}", "test:".bold().cyan());
+fn test(number: usize) -> Result<(), ()> {    
     let file = if let Ok(f) = fs::File::open(&format!("{}/{}.dat", paths::tests_dir(), number)) {
         f
     } else {
-        println!("{} corrupted", "tests".bright_red().bold());
+        error("tests", "corrupted");
         return Err(());
     };
+    println!();
+    println!("{}", "test:".bold().cyan());
     let reader = BufReader::new(file);
     for line in reader.lines() {
         let line = line.unwrap();
@@ -38,17 +38,17 @@ fn test(number: usize) -> Result<(), ()> {
 }
 
 fn solution_result(number: usize) -> Result<(), ()> {
-    println!("{}", "solution_result:".bold().cyan());
     let file = if let Ok(f) = fs::File::open(&format!("{}/{}.dat", paths::solution_results_dir(), number)) {
         f
     } else {
-        println!("{} corrupted", "solution results".bright_red().bold());
+        log::error("solution results", "corrupted");
         return Err(());
     };
+    println!("{}", "solution_result:".bold().cyan());
     let reader = BufReader::new(file);
     for line in reader.lines() {
         let line = line.unwrap();
-        println!("{}", format!("{line}").bright_yellow());
+        println!("{}", format!("{line}").white());
     }
 
     println!();
@@ -57,13 +57,14 @@ fn solution_result(number: usize) -> Result<(), ()> {
 }
 
 fn ref_result(number: usize) -> Result<(), ()> {
-    println!("{}", "ref_result:".bold().cyan());
     let file = if let Ok(f) = fs::File::open(&format!("{}/{}.dat", paths::ref_results_dir(), number)) {
         f
     } else {
-        println!("{} corrupted", "reference results".bright_red().bold());
+        log::error("reference results", "corrupted");
         return Err(());
     };
+
+    println!("{}", "ref_result:".bold().cyan());
     let reader = BufReader::new(file);
     for line in reader.lines() {
         let line = line.unwrap();

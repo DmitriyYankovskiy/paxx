@@ -1,16 +1,11 @@
 use std::process::Child;
 
-use colored::Colorize;
-
 use crate::{
-    config::{self, Config}, 
-    hashes::{get_hash_file, Hashes},
-    paths::{self, remove_all_in_dir},
-    compile::compile,
+    config::{self, Config}, hashes::{get_hash_file, Hashes}, log, paths::{self, remove_all_in_dir}, utils::compile::compile
 };
 
 pub fn all(config: &Config, hashes: &mut Hashes) -> Result<(), ()> {
-    println!("{}", "building ...".bright_yellow());
+    log::status("build ...");
     let mut childs = Vec::<Option<(String, Option<Child>)>>::new();
     childs.push(solution(config, hashes)?);
     
@@ -41,10 +36,10 @@ pub fn all(config: &Config, hashes: &mut Hashes) -> Result<(), ()> {
                 status = child.wait().unwrap().success();
             }
             if status {
-                println!(" - {} succesful compiled", path.as_str().bold().cyan());
+                log::info(&path, " - succesful compiled");
             } else {
                 res = Err(());
-                println!(" - {} compiled with error", path.as_str().bold().bright_red());
+                log::error(&path, " - compiled with error");
             }
         }
     };

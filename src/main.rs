@@ -3,14 +3,15 @@ mod config;
 mod hashes;
 mod paths;
 mod cmd;
-mod compile;
-mod run;
+mod utils;
+mod log;
 
 use std::{collections::HashSet, env, fs, time::Instant};
 
 use colored::Colorize;
 use config::Config;
 use hashes::Hashes;
+use log::error;
 
 fn index() {
     println!("{} {}", "stress testing manager", "PAXX ".bold().on_purple());
@@ -50,7 +51,7 @@ fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
                 Config::write(&mut Config::default());
             } 
             if let Ok(_) = Config::load_and_check() {
-                println!("{}", "all right".bold().green());
+                log::ok("config", "is valid");
             }
         }
 
@@ -67,13 +68,13 @@ fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
             let arg2 = if let Some(arg2) = arg2 {
                 arg2.clone()
             } else {
-                println!("{} {}", "tests count".bold().bright_red(), "not found".red());
+                log::error("tests_count", "not found");
                 return Err(());
             }; 
-            let test_count: usize = match arg2.parse() {
+            let tests_count: usize = match arg2.parse() {
                 Ok(count) => count,
                 Err(_) => {
-                    println!("{} {}", "incorrect".red(), "tests count".bold().bright_red());
+                    log::error("tests_count", "incorrect");
                     return Err(());
                 }
             };
@@ -85,7 +86,7 @@ fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
             Hashes::write(&mut hashes);
             build_res?;
 
-            cmd::run::all(test_count, None, &config, &flags)?;
+            cmd::run::all(tests_count, None, &config, &flags)?;
         }
 
         "catch" => {
@@ -93,7 +94,7 @@ fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
             let arg2 = if let Some(arg2) = arg2 {
                 arg2.clone()
             } else {
-                println!("{} {}", "errors count".bold().bright_red(), "not found".red());
+                log::error("errors count", "not found");
                 return Err(());
             }; 
 
@@ -101,14 +102,14 @@ fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
             let arg3 = if let Some(arg3) = arg3 {
                 arg3.clone()
             } else {
-                println!("{} {}", "tests count".bold().bright_red(), "not found".red());
+                log::error("tests count", "not found");
                 return Err(());
             };
 
             let tests_count: usize = match arg3.parse() {
                 Ok(count) => count,
                 Err(_) => {
-                    println!("{} {}", "incorrect".red(), "tests count".bold().bright_red());
+                    log::error("tests count", "incorrect");
                     return Err(());
                 }
             };
@@ -116,7 +117,7 @@ fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
             let errors_count: usize = match arg2.parse() {
                 Ok(count) => count,
                 Err(_) => {
-                    println!("{} {}", "incorrect".red(), "errors count".bold().bright_red());
+                    log::error("errors count", "incorrect");
                     return Err(());
                 }
             };
@@ -142,13 +143,13 @@ fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
             let arg2 = if let Some(arg2) = arg2 {
                 arg2.clone()
             } else {
-                println!("{} {}", "tests number".bold().bright_red(), "not found".red());
+                log::error("tests number", "not found");
                 return Err(());
             }; 
             let test_number: usize = match arg2.parse() {
                 Ok(count) => count,
                 Err(_) => {
-                    println!("{} {}", "incorrect".red(), "tests number".bold().bright_red());
+                    log::error("tests number", "incorrect");
                     return Err(());
                 }
             };
@@ -162,7 +163,7 @@ fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
             let arg2 = if let Some(arg2) = arg2 {
                 arg2.clone()
             } else {
-                println!("{} {}", "pattern".bold().bright_red(), "not found".red());
+                log::error("pattern", "not found");
                 return Err(());
             };
 
@@ -176,7 +177,7 @@ fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
                         if let Some(p) = Config::load()?.test_gen_path {
                             p
                         } else {
-                            println!("{} {}", "tests generator".bold().bright_red(), "not found".red());
+                            log::error("tests generator", "not found");
                             return Err(());
                         }
                     };
@@ -205,7 +206,7 @@ fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
                     }
                 },
                 _ => {
-                    println!("{} {}", "incorrect".red(), "pattern".bold().bright_red());
+                    log::error("pattern", "incorrect");
                     return Err(());
                 }
             }
@@ -223,7 +224,7 @@ fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
         }
 
         _ => {
-            println!("{} {}", "no such command:".red(), command.bold().bright_red());
+            error("command", "incorrect");
         },
     };
 

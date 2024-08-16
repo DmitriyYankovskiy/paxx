@@ -3,15 +3,15 @@ use colored::{Color, Colorize};
 use std::{cmp::{max, min}, fs, io::{BufReader, Read}, time::Duration};
 
 use crate::{
-    config::{self, Config}, paths, run::{self, RunResult}, Flags
+    config::{self, Config}, log, paths, utils::run::{self, RunResult}, Flags
 };
 
 pub fn all<'a>(tests_count: usize, errors_count: Option<usize>, config: &Config, flags: &'a Flags) -> Result<(), ()> {
     if  let config::TestingMode::Manual = config.testing_mode {
-        println!("cannot run in {} mode", "manual".blue());
+        log::error("[Manual mode]", "cannot running");
         return Err(());
     }
-    println!("{}", "running ...".bright_yellow());
+    log::status("run ...");
     println!();
     let mut errors = Vec::<usize>::new();
     let created_tests_count = fs::read_dir(paths::tests_dir()).unwrap().count();
@@ -107,7 +107,8 @@ fn get_verdict(test: usize, tests_count: usize, mut output: String, flags: &Flag
     let (verdict, comment) = match output.split_once(" ") {
         Some(vc) => vc,
         None => {
-            println!("{} {}: {}", "incorrect".red(), "result checker output".bold().bright_red(), output);
+            log::error("result checker output", "incorrect:");
+            println!("{}", output);
             return Err(());
         }
     };
@@ -128,7 +129,8 @@ fn get_verdict(test: usize, tests_count: usize, mut output: String, flags: &Flag
             Ok(true)
         }
         _ => {
-            println!("{} {}: {}", "incorrect".red(), "result checker verdict".bold().bright_red(), verdict);
+            log::error("result checker verdict", "incorrect:");
+            println!("{}", verdict);
             Err(())
         }
     }

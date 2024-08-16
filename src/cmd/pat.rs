@@ -4,7 +4,7 @@ use colored::Colorize;
 
 use crate::Flags;
 
-fn create_file(path: String, text: &str, flags: Flags) {
+fn create_file(path: String, text: &str, flags: &Flags) {
     if !Path::new(path.as_str()).exists() || flags.contains("r") {
         let mut file = fs::File::create(&path).unwrap();
         file.write_all(text.as_bytes()).unwrap();
@@ -14,14 +14,14 @@ fn create_file(path: String, text: &str, flags: Flags) {
     }
 } 
 
-pub fn gen(path: String, flags: Flags) {
-    create_file(path, GEN_PATTERN, flags);
+pub fn gen(path: &String, flags: &Flags) {
+    create_file(path.clone(), GEN_PATTERN, flags);
 }
-pub fn std(path: String, flags: Flags) {
-    create_file(path, STD_PATTERN, flags);
+pub fn std(path: &String, flags: &Flags) {
+    create_file(path.clone(), STD_PATTERN, flags);
 }
-pub fn edit_cfg_cpp_vscode(path: String, flags: Flags) {
-    create_file(path, EDIT_CFG_CPP_VSCODE, flags);
+pub fn edit_cfg_cpp_vscode(path: &String, flags: &Flags) {
+    create_file(path.clone(), EDIT_CFG_CPP_VSCODE, flags);
 }
 const GEN_PATTERN: &str = 
 r#"#include<bits/stdc++.h>

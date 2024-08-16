@@ -38,12 +38,18 @@ comparison:                             ComparisonResults
 
 config - config.yml:
     testing_type:
+    
     --  ComparisonResults :
         running tests for the solution and the reference solution and comparing the results
+    
     --  AutoComparisonResults :
         running tests for the solution and the reference solution and finding difference between the results
+    
     --  CheckingResults :
         running tests for the solution and checking results
+    
+    --  Manual :
+        solo running
 
 commands: 
     init
@@ -57,4 +63,8 @@ commands:
      - gen
      - std [? path ?]
      - edit_cfg_c++_vscode 
+
+unix_wait_status:
+ - 139: Segmentation fault
+ 
 "#;

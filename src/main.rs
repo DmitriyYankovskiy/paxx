@@ -2,14 +2,13 @@ mod readme;
 mod config;
 mod hashes;
 mod paths;
-mod commands;
+mod cmd;
 mod compile;
 mod run;
 
 use std::{collections::HashSet, env, fs, time::Instant};
 
 use colored::Colorize;
-use commands::patterns;
 use config::Config;
 use hashes::Hashes;
 
@@ -43,23 +42,23 @@ fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
 
     match command.as_str() {
         "init" => {
-            commands::init::all();
+            cmd::init::all();
         }
 
         "check" => {
             if flags.contains("r") {
                 Config::write(&mut Config::default());
             } 
-            if let Ok(_) = Config::load() {
+            if let Ok(_) = Config::load_and_check() {
                 println!("{}", "all right".bold().green());
             }
         }
 
         "build" => {
-            let config = Config::load()?;
+            let config = Config::load_and_check()?;
 
             let mut hashes = Hashes::load(&flags);
-            let _ = commands::build::all(&config, &mut hashes);
+            let _ = cmd::build::all(&config, &mut hashes);
             Hashes::write(&mut hashes);
         }
 
@@ -79,14 +78,14 @@ fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
                 }
             };
 
-            let config = Config::load()?;
+            let config = Config::load_and_check()?;
 
             let mut hashes = Hashes::load(&flags);
-            let build_res = commands::build::all(&config, &mut hashes);
+            let build_res = cmd::build::all(&config, &mut hashes);
             Hashes::write(&mut hashes);
             build_res?;
 
-            commands::run::all(test_count, None, &config, &flags)?;
+            cmd::run::all(test_count, None, &config, &flags)?;
         }
 
         "catch" => {
@@ -122,14 +121,14 @@ fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
                 }
             };
 
-            let config = Config::load()?;
+            let config = Config::load_and_check()?;
 
             let mut hashes = Hashes::load(&flags);
-            let build_res = commands::build::all(&config, &mut hashes);
+            let build_res = cmd::build::all(&config, &mut hashes);
             Hashes::write(&mut hashes);
             build_res?;
 
-            commands::run::all(tests_count, Some(errors_count), &config, &flags)?;
+            cmd::run::all(tests_count, Some(errors_count), &config, &flags)?;
         }
 
         "remove" => {
@@ -137,7 +136,7 @@ fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
         }
 
         "get" => {
-            let config = Config::load()?;
+            let config = Config::load_and_check()?;
 
             let arg2 = args.get(2);
             let arg2 = if let Some(arg2) = arg2 {
@@ -155,7 +154,7 @@ fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
             };
 
 
-            commands::get::all(test_number, &config)?;
+            cmd::get::all(test_number, &config)?;
         }
 
         "pat" => {
@@ -170,16 +169,26 @@ fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
 
             match arg2.as_str() {
                 "gen" => {
-                    let config = Config::load()?;
-                    if let None = config.test_gen_path {
-                        println!("{} {}", "test gen path".bold().bright_red(), "not found".red());
-                        return Err(());
+                    let arg3 = args.get(3);
+                    let arg3 = if let Some(arg3) = arg3 {
+                        arg3.clone()
+                    } else {
+                        if let Some(p) = Config::load()?.test_gen_path {
+                            p
+                        } else {
+                            println!("{} {}", "tests generator".bold().bright_red(), "not found".red());
+                            return Err(());
+                        }
+                    };
+
+                    cmd::pat::gen(&arg3, &flags);
+                    if flags.contains("s") {
+                        cmd::cfg::set_test_gen(&arg3)?;
                     }
-                    patterns::gen(config.test_gen_path.unwrap(), flags);
                 },
 
                 "edit_cfg_cpp_vscode" => {
-                    patterns::edit_cfg_cpp_vscode(".editorconfig".to_string(), flags);
+                    cmd::pat::edit_cfg_cpp_vscode(&".editorconfig".to_string(), &flags);
                 },
 
                 "std" => {
@@ -189,7 +198,11 @@ fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
                     } else {
                         Config::load()?.solution_path
                     };
-                    patterns::std(arg3, flags);
+                    cmd::pat::std(&arg3, &flags);
+
+                    if flags.contains("s") {
+                        cmd::cfg::set_solution(&arg3)?;
+                    }
                 },
                 _ => {
                     println!("{} {}", "incorrect".red(), "pattern".bold().bright_red());
@@ -199,14 +212,14 @@ fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
         }
 
         "solo" => {
-            let config = Config::load()?;
+            let config = Config::load_and_check()?;
 
             let mut hashes = Hashes::load(&flags);
-            let build_res = commands::build::all(&config, &mut hashes);
+            let build_res = cmd::build::all(&config, &mut hashes);
             Hashes::write(&mut hashes);
             build_res?;
 
-            commands::solo::solution(&Config::load()?)?;
+            cmd::solo::solution(&Config::load()?)?;
         }
 
         _ => {

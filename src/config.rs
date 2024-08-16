@@ -71,31 +71,20 @@ impl Config {
         file.write_all(&config.as_bytes()).unwrap();
     }
 
-    pub fn load() -> Result<Self, ()> {
-        let mut file = fs::File::open(paths::config()).unwrap();
-        let mut config = String::new();
-        file.read_to_string(&mut config).unwrap();
-        let config: Config = match serde_yml::from_str(config.as_str()) {
-            Ok(cfg) => cfg,
-            Err(_) => {
-                println!("{}", "incorrect config file".bright_red().bold());
-                return Err(())
-            },
-        };
-
+    fn check(&self) -> Result<(), ()> {
         let mut error = false;
-        if !Path::new(&config.solution_path).exists() {
+        if !Path::new(&self.solution_path).exists() {
             error = true;
             println!("{} {}", "solution code".bold().bright_red(), "not found".red());
         }
 
-        let testing_mode = config.testing_mode;
+        let testing_mode = self.testing_mode;
 
         match testing_mode {
             TestingMode::Manual => {
-                if config.sample_path == None || !Path::new(&config.sample_path.clone().unwrap()).exists() {
+                if self.sample_path == None || !Path::new(&self.sample_path.clone().unwrap()).exists() {
                     error = true;
-                    println!("{} {}", "tests generator".bold().bright_red(), "not found".red());
+                    println!("{} {}", "sample".bold().bright_red(), "not found".red());
                 }
             }
             _ => {}
@@ -103,7 +92,7 @@ impl Config {
 
         match testing_mode {
             TestingMode::ComparisonResults | TestingMode::CheckingResults | TestingMode::AutoComparisonResults => {
-                if config.test_gen_path == None || !Path::new(&config.test_gen_path.clone().unwrap()).exists() {
+                if self.test_gen_path == None || !Path::new(&self.test_gen_path.clone().unwrap()).exists() {
                     error = true;
                     println!("{} {}", "tests generator".bold().bright_red(), "not found".red());
                 }
@@ -114,7 +103,7 @@ impl Config {
 
         match testing_mode {
             TestingMode::CheckingResults => {
-                if config.res_checker_path == None || !Path::new(&config.res_checker_path.clone().unwrap()).exists() {
+                if self.res_checker_path == None || !Path::new(&self.res_checker_path.clone().unwrap()).exists() {
                     error = true;
                     println!("{} {}", "result checker".bold().bright_red(), "not found".red());
                 }
@@ -125,7 +114,7 @@ impl Config {
 
         match testing_mode {
             TestingMode::ComparisonResults | TestingMode::AutoComparisonResults => {
-                if config.reference_path == None || !Path::new(&config.reference_path.clone().unwrap()).exists() {
+                if self.reference_path == None || !Path::new(&self.reference_path.clone().unwrap()).exists() {
                     error = true;
                     println!("{} {}", "reference code".bold().bright_red(), "not found".red());
                 }
@@ -136,7 +125,7 @@ impl Config {
 
         match testing_mode {
             TestingMode::ComparisonResults => {
-                if config.comparator_path == None || !Path::new(&config.comparator_path.clone().unwrap()).exists() {
+                if self.comparator_path == None || !Path::new(&self.comparator_path.clone().unwrap()).exists() {
                     error = true;
                     println!("{} {}", "comparator".bold().bright_red(), "not found".red());
                 }
@@ -148,8 +137,28 @@ impl Config {
         if error {
             Err(())
         } else {
-            Ok(config)
+            Ok(())
         }
+    }
+
+    pub fn load() -> Result<Self, ()> {
+        let mut file = fs::File::open(paths::config()).unwrap();
+        let mut config = String::new();
+        file.read_to_string(&mut config).unwrap();
+        let config: Config = match serde_yml::from_str(config.as_str()) {
+            Ok(cfg) => cfg,
+            Err(_) => {
+                println!("{}", "incorrect config file".bright_red().bold());
+                return Err(())
+            },
+        };
+        Ok(config)
+    }
+
+    pub fn load_and_check() -> Result<Self, ()> {
+        let config = Self::load()?;
+        config.check()?;
+        Ok(config)
     }
 
     pub fn get_args(&self, language: &str) -> Vec<String> {

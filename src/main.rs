@@ -223,6 +223,18 @@ fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
             cmd::solo::solution(&Config::load()?)?;
         }
 
+        "touch" => {
+            let arg2 = args.get(2);
+            let arg2 = if let Some(arg2) = arg2 {
+                arg2.clone()
+            } else {
+                log::error("path", "not found");
+                return Err(());
+            };
+
+            cmd::touch::file(&arg2, &flags);
+        }
+
         _ => {
             error("command", "incorrect");
         },
@@ -230,7 +242,7 @@ fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
 
 
     let time = start_time.elapsed();
-    println!();
+    println!("...>");
     println!("complited in {} secs", format!("{:.3}", (time.as_secs_f32() * 1000.0).ceil()/1000.0).bold().bright_magenta());
 
     Ok(())

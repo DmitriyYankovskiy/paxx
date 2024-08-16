@@ -5,3 +5,4 @@ pub mod get;
 pub mod pat;
 pub mod solo;
 pub mod cfg;
+pub mod touch;

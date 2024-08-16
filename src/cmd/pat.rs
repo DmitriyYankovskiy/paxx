@@ -1,25 +1,15 @@
-use std::{fs, io::Write, path::Path};
+use crate::{Flags, utils::file};
 
-use crate::{log, Flags};
 
-fn create_file(path: String, text: &str, flags: &Flags) {
-    if !Path::new(path.as_str()).exists() || flags.contains("r") {
-        let mut file = fs::File::create(&path).unwrap();
-        file.write_all(text.as_bytes()).unwrap();
-        log::ok(&path, "created");
-    } else {
-        log::info(&path, "already exists");
-    }
-} 
 
 pub fn gen(path: &String, flags: &Flags) {
-    create_file(path.clone(), GEN_PATTERN, flags);
+    file::create_file(path.clone(), GEN_PATTERN, flags);
 }
 pub fn std(path: &String, flags: &Flags) {
-    create_file(path.clone(), STD_PATTERN, flags);
+    file::create_file(path.clone(), STD_PATTERN, flags);
 }
 pub fn edit_cfg_cpp_vscode(path: &String, flags: &Flags) {
-    create_file(path.clone(), EDIT_CFG_CPP_VSCODE, flags);
+    file::create_file(path.clone(), EDIT_CFG_CPP_VSCODE, flags);
 }
 const GEN_PATTERN: &str = 
 r#"#include<bits/stdc++.h>

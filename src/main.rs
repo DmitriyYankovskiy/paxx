@@ -5,12 +5,11 @@ mod paths;
 mod cmd;
 mod utils;
 mod log;
+mod controllers;
 
-use std::{collections::HashSet, env, fs, time::Instant};
+use std::{collections::HashSet, env, time::Instant};
 
 use colored::Colorize;
-use config::Config;
-use hashes::Hashes;
 use log::error;
 
 fn index() {
@@ -41,198 +40,47 @@ fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
         }
     }
 
+    println!("{}", "PAXX --- >".bold().purple());
+
     match command.as_str() {
         "init" => {
-            cmd::init::all();
+            controllers::init();
         }
 
         "check" => {
-            if flags.contains("r") {
-                Config::write(&mut Config::default());
-            } 
-            if let Ok(_) = Config::load_and_check() {
-                log::ok("config", "is valid");
-            }
+            controllers::check(&flags);
         }
 
         "build" => {
-            let config = Config::load_and_check()?;
-
-            let mut hashes = Hashes::load(&flags);
-            let _ = cmd::build::all(&config, &mut hashes);
-            Hashes::write(&mut hashes);
+            controllers::build(&flags)?;
         }
 
         "run" => {
-            let arg2 = args.get(2);
-            let arg2 = if let Some(arg2) = arg2 {
-                arg2.clone()
-            } else {
-                log::error("tests_count", "not found");
-                return Err(());
-            }; 
-            let tests_count: usize = match arg2.parse() {
-                Ok(count) => count,
-                Err(_) => {
-                    log::error("tests_count", "incorrect");
-                    return Err(());
-                }
-            };
-
-            let config = Config::load_and_check()?;
-
-            let mut hashes = Hashes::load(&flags);
-            let build_res = cmd::build::all(&config, &mut hashes);
-            Hashes::write(&mut hashes);
-            build_res?;
-
-            cmd::run::all(tests_count, None, &config, &flags)?;
+            controllers::run(&args, &flags)?;
         }
 
         "catch" => {
-            let arg2 = args.get(2);
-            let arg2 = if let Some(arg2) = arg2 {
-                arg2.clone()
-            } else {
-                log::error("errors count", "not found");
-                return Err(());
-            }; 
-
-            let arg3 = args.get(3);
-            let arg3 = if let Some(arg3) = arg3 {
-                arg3.clone()
-            } else {
-                log::error("tests count", "not found");
-                return Err(());
-            };
-
-            let tests_count: usize = match arg3.parse() {
-                Ok(count) => count,
-                Err(_) => {
-                    log::error("tests count", "incorrect");
-                    return Err(());
-                }
-            };
-
-            let errors_count: usize = match arg2.parse() {
-                Ok(count) => count,
-                Err(_) => {
-                    log::error("errors count", "incorrect");
-                    return Err(());
-                }
-            };
-
-            let config = Config::load_and_check()?;
-
-            let mut hashes = Hashes::load(&flags);
-            let build_res = cmd::build::all(&config, &mut hashes);
-            Hashes::write(&mut hashes);
-            build_res?;
-
-            cmd::run::all(tests_count, Some(errors_count), &config, &flags)?;
+            controllers::catch(args, &flags)?;
         }
 
         "remove" => {
-            fs::remove_dir_all(paths::dir()).unwrap();
+            controllers::remove();
         }
 
         "get" => {
-            let config = Config::load_and_check()?;
-
-            let arg2 = args.get(2);
-            let arg2 = if let Some(arg2) = arg2 {
-                arg2.clone()
-            } else {
-                log::error("tests number", "not found");
-                return Err(());
-            }; 
-            let test_number: usize = match arg2.parse() {
-                Ok(count) => count,
-                Err(_) => {
-                    log::error("tests number", "incorrect");
-                    return Err(());
-                }
-            };
-
-
-            cmd::get::all(test_number, &config)?;
+            controllers::get(&args)?;
         }
 
         "pat" => {
-            let arg2 = args.get(2);
-            let arg2 = if let Some(arg2) = arg2 {
-                arg2.clone()
-            } else {
-                log::error("pattern", "not found");
-                return Err(());
-            };
-
-
-            match arg2.as_str() {
-                "gen" => {
-                    let arg3 = args.get(3);
-                    let arg3 = if let Some(arg3) = arg3 {
-                        arg3.clone()
-                    } else {
-                        if let Some(p) = Config::load()?.test_gen_path {
-                            p
-                        } else {
-                            log::error("tests generator", "not found");
-                            return Err(());
-                        }
-                    };
-
-                    cmd::pat::gen(&arg3, &flags);
-                    if flags.contains("s") {
-                        cmd::cfg::set_test_gen(&arg3)?;
-                    }
-                },
-
-                "edit_cfg_cpp_vscode" => {
-                    cmd::pat::edit_cfg_cpp_vscode(&".editorconfig".to_string(), &flags);
-                },
-
-                "std" => {
-                    let arg3 = args.get(3);
-                    let arg3 = if let Some(arg3) = arg3 {
-                        arg3.clone()
-                    } else {
-                        Config::load()?.solution_path
-                    };
-                    cmd::pat::std(&arg3, &flags);
-
-                    if flags.contains("s") {
-                        cmd::cfg::set_solution(&arg3)?;
-                    }
-                },
-                _ => {
-                    log::error("pattern", "incorrect");
-                    return Err(());
-                }
-            }
+            controllers::pat(args, &flags)?;
         }
 
         "solo" => {
-            let config = Config::load_and_check()?;
-
-            let mut hashes = Hashes::load(&flags);
-            let build_res = cmd::build::all(&config, &mut hashes);
-            Hashes::write(&mut hashes);
-            build_res?;
-
-            cmd::solo::solution(&Config::load()?)?;
+            controllers::solo(&flags)?;
         }
 
-        "touch" => {
-            let arg2 = args.get(2);
-            let arg2 = if let Some(arg2) = arg2 {
-                arg2.clone()
-            } else {
-                log::error("path", "not found");
-                return Err(());
-            };
-
-            cmd::touch::file(&arg2, &flags);
+        "cfg" => {
+            controllers::cfg(args, &flags)?;
         }
 
         _ => {
@@ -242,8 +90,8 @@ fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
 
 
     let time = start_time.elapsed();
-    println!("...>");
-    println!("complited in {} secs", format!("{:.3}", (time.as_secs_f32() * 1000.0).ceil()/1000.0).bold().bright_magenta());
+    println!("{}", "____".bold());
+    println!("{} in {} secs", "complited".white(), format!("{:.3}", (time.as_secs_f32() * 1000.0).ceil()/1000.0).bold().bright_magenta());
 
     Ok(())
 }

@@ -2,63 +2,50 @@ use serde::{Serialize, Deserialize};
 
 use std::{collections::HashMap, fs, io::{Read, Write}, path::Path};
 
-use crate::{log, paths};
-
-#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
-pub enum TestingMode {
-    Manual,
-    CheckingResults,
-    ComparisonResults,
-    AutoComparisonResults,
-}
+use crate::{log, paths, Language};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {
-    pub solution_path: String,
-    pub test_gen_path: Option<String>,
+    solution_path: Option<String>,
+    generator_path: Option<String>,
 
-    pub reference_path: Option<String>,
+    reference_path: Option<String>,
 
-    pub comparator_path: Option<String>,
-    pub res_checker_path: Option<String>,
+    comparator_path: Option<String>,
+    checker_path: Option<String>,
 
-    pub testing_mode: TestingMode,
+    sample_path: Option<String>,
 
-    pub sample_path: Option<String>,
-
-    pub args: HashMap<String, Vec<String>>,
-
-    pub solo_args: HashMap<String, Vec<String>>,
+    compile_std_args: HashMap<Language, Vec<String>>,
+    compile_dbg_args: HashMap<Language, Vec<String>>,
 }
 
 impl Default for Config {
     fn default() -> Self {
-        let mut args = HashMap::new();
-        args.insert("c++".to_string(), vec![
+        let mut compile_std_args = HashMap::new();
+        compile_std_args.insert(Language::Cpp, vec![
             "-D".to_string(),
             "STRESS".to_string()],
         );
-        args.insert("rust".to_string(), vec![]);
+        compile_std_args.insert(Language::Rust, vec![]);
 
-        let mut solo_args = HashMap::new();
-        solo_args.insert("c++".to_string(), vec![
+        let mut compile_dbg_args = HashMap::new();
+        compile_dbg_args.insert(Language::Cpp, vec![
             "-D".to_string(),
             "SOLO".to_string()],
         );
-        solo_args.insert("rust".to_string(), vec![]);
+        compile_dbg_args.insert(Language::Rust, vec![]);
         Self {
-            solution_path: String::from("solution.cpp"),
+            solution_path: None,
             reference_path: None,            
-            test_gen_path: None,
+            generator_path: None,
 
             comparator_path: None,
             sample_path: None,
-            res_checker_path: None,            
+            checker_path: None,
 
-            testing_mode: TestingMode::Manual,
-
-            args,
-            solo_args,
+            compile_std_args,
+            compile_dbg_args,
         }
     }
 }
@@ -68,76 +55,6 @@ impl Config {
         let mut file = fs::File::create(paths::config()).unwrap();
         let config = serde_yml::to_string(config).unwrap();
         file.write_all(&config.as_bytes()).unwrap();
-    }
-
-    fn check(&self) -> Result<(), ()> {
-        let mut error = false;
-        if !Path::new(&self.solution_path).exists() {
-            error = true;
-            log::error("solution code", "not found");
-        }
-
-        let testing_mode = self.testing_mode;
-
-        match testing_mode {
-            TestingMode::Manual => {
-                if self.sample_path == None || !Path::new(&self.sample_path.clone().unwrap()).exists() {
-                    error = true;
-                    log::error("sample", "not found");
-                }
-            }
-            _ => {}
-        }
-
-        match testing_mode {
-            TestingMode::ComparisonResults | TestingMode::CheckingResults | TestingMode::AutoComparisonResults => {
-                if self.test_gen_path == None || !Path::new(&self.test_gen_path.clone().unwrap()).exists() {
-                    error = true;
-                    log::error("test generator", "not found");
-                }
-            }
-
-            _ => {}
-        }
-
-        match testing_mode {
-            TestingMode::CheckingResults => {
-                if self.res_checker_path == None || !Path::new(&self.res_checker_path.clone().unwrap()).exists() {
-                    error = true;
-                    log::error("result checker", "not found");
-                }
-            }
-
-            _ => {}
-        }
-
-        match testing_mode {
-            TestingMode::ComparisonResults | TestingMode::AutoComparisonResults => {
-                if self.reference_path == None || !Path::new(&self.reference_path.clone().unwrap()).exists() {
-                    error = true;
-                    log::error("reference code", "not found");
-                }
-            }
-
-            _ => {}
-        }
-
-        match testing_mode {
-            TestingMode::ComparisonResults => {
-                if self.comparator_path == None || !Path::new(&self.comparator_path.clone().unwrap()).exists() {
-                    error = true;
-                    log::error("comparator", "not found");
-                }
-            }
-
-            _ => {}
-        }
-        
-        if error {
-            Err(())
-        } else {
-            Ok(())
-        }
     }
 
     pub fn load() -> Result<Self, ()> {
@@ -159,28 +76,83 @@ impl Config {
         Ok(config)
     }
 
-    pub fn load_and_check() -> Result<Self, ()> {
-        let config = Self::load()?;
-        config.check()?;
-        Ok(config)
+    pub fn get_solution_path(&self) -> Result<String, ()> {
+        let path = self.solution_path;
+        if path == None || !Path::new(&path.unwrap()).exists() {
+            log::error("test gen", "not found");
+            Err(())
+        } else {
+            Ok(path.unwrap())
+        }
     }
 
-    pub fn get_args(&self, language: &str) -> Vec<String> {
-        match self.testing_mode {
-            TestingMode::Manual => {
-                if let Some(args) = self.solo_args.get(language) {
-                    args.clone()
-                } else {
-                    Vec::new()
-                }
-            }
-            _ => {
-                if let Some(args) = self.args.get(language) {
-                    args.clone()
-                } else {
-                    Vec::new()
-                }
-            }
+    pub fn get_sample_path(&self) -> Result<String, ()> {
+        let path = self.sample_path;
+        if path == None || !Path::new(&path.unwrap()).exists() {
+            log::error("sample", "not found");
+            Err(())
+        } else {
+            Ok(path.unwrap())
+        }
+    }
+
+    pub fn get_generator_path(&self) -> Result<String, ()> {
+        let path = self.generator_path;
+        if path == None || !Path::new(&path.unwrap()).exists() {
+            log::error("generator", "not found");
+            Err(())
+        } else {
+            Ok(path.unwrap())
+        }
+    }
+
+    pub fn get_checker_path(&self) -> Result<String, ()> {
+        let path = self.checker_path;
+        if path == None || !Path::new(&path.unwrap()).exists() {
+            log::error("checker", "not found");
+            Err(())
+        } else {
+            Ok(path.unwrap())
+        }
+    }
+
+    
+
+    pub fn get_reference_path(&self) -> Result<String, ()> {
+        let path = self.reference_path;
+        if path == None || !Path::new(&path.unwrap()).exists() {
+            log::error("reference", "not found");
+            Err(())
+        } else {
+            Ok(path.unwrap())
+        }
+    }
+
+    pub fn get_comparator_path(&self) -> Result<String, ()> {
+        let path = self.comparator_path;
+        if path == None || !Path::new(&path.unwrap()).exists() {
+            log::error("comparator", "not found");
+            Err(())
+        } else {
+            Ok(path.unwrap())
+        }
+    }
+    
+    
+    
+    pub fn get_compile_std_args(&self, lang: Language) -> Vec<String> {
+        if let Some(args) = self.compile_std_args.get(&lang) {
+            args.clone()
+        } else {
+            Vec::new()
+        }
+    }
+
+    pub fn get_compile_dbg_args(&self, lang: Language) -> Vec<String> {
+        if let Some(args) = self.compile_dbg_args.get(&lang) {
+            args.clone()
+        } else {
+            Vec::new()
         }
     }
 }

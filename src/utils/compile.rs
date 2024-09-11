@@ -1,72 +1,70 @@
 use std::{fs, process::{Child, Command}};
+use crate::Language::{self, Cpp, Python, Rust};
 
 use crate::{
-    config::Config, log, paths
+    config::Config, paths
 };
 
-pub fn executable_ext(source_ext: &str) -> String {
-    match source_ext {
-        "c++" | "cpp" | "rs" => "exe",
-        "py" => "py",
-        _ => "not compile",
-    }.to_string()
+pub enum CompileMode {
+    Std,
+    Dbg,
 }
 
+fn compile_rust(path: &str, ext: &str, config: &Config, mode: CompileMode) -> Result<Child, ()> {
+    let lang: Language = Language::Rust;
 
-
-pub fn compile_cpp(path: &str, ext: &str, config: &Config) -> Result<Child, ()> {
     let from = format!("{path}.{ext}");
-    let to = format!("{}/{}.{}", paths::build_dir(), path, executable_ext(ext));
+    let to = format!("{}/{}.{}", paths::build_dir(), path, "exe");
     let mut args = vec![from, String::from("-o"), to];
-    args.append(&mut config.get_args("c++"));
-    
-    if let Ok(child) = Command::new("g++")
-        .args(args)
-        .spawn() {
+    args.append(&mut match mode {
+        CompileMode::Std => config.get_compile_std_args(lang),
+        CompileMode::Dbg => config.get_compile_dbg_args(lang),
+    });
+
+    if let Ok(child) = Command::new("rustc")
+    .args(args)
+    .spawn() {
         Ok(child)
     } else {
-        log::error("c++ args", "incorrect");
         Err(())
     }
 }
 
-pub fn compile_rust(path: &str, ext: &str, config: &Config) -> Result<Child, ()> {
-    let from = format!("{path}.{ext}");
-    let to = format!("{}/{}.{}", paths::build_dir(), path, executable_ext(ext));
+fn compile_cpp(name: &str, ext: &str, config: &Config, mode: CompileMode) -> Result<Child, ()> {
+    let lang: Language = Language::Cpp;
+
+    let from = format!("{name}.{ext}");
+    let to = format!("{}/{}.{}", paths::build_dir(), name, "exe");
     let mut args = vec![from, String::from("-o"), to];
-    args.append(&mut config.get_args("rust"));    
+    args.append(&mut match mode {
+        CompileMode::Std => config.get_compile_std_args(lang),
+        CompileMode::Dbg => config.get_compile_dbg_args(lang),
+    });
 
     if let Ok(child) = Command::new("rustc")
-        .args(args)
-        .spawn() {
-            Ok(child)
-        } else {
-            log::error("rust args", "incorrect");
-            Err(())
-        }
+    .args(args)
+    .spawn() {
+        Ok(child)
+    } else {
+        Err(())
+    }
 }
 
-pub fn copy_file(path: &str, ext: &str) -> Result<(), ()> {
-    fs::copy(format!("{path}.{ext}"), format!("{}/{path}.{ext}", paths::build_dir())).unwrap();
+pub fn copy_file(path: &str) -> Result<(), ()> {
+    fs::copy(format!("{path}"), format!("{}/{path}", paths::build_dir())).unwrap();
     Ok(())
 }
 
-pub fn compile(path: &String, config: &Config) -> Result<Option<Child>, ()> {
-    let (path, ext) = path.split_once(".").unwrap();
-    match ext {
-        "cpp" | "c++" => {
-            Ok(Some(compile_cpp(path, ext, config)?))
-        }
-        "rs" => {
-            Ok(Some(compile_rust(path, ext, config)?))
-        }
-        "py" => {
-            copy_file(path, ext)?;
-            Ok(None)
-        }
-        _ => {
-            log::error(&ext, "does not compile");
-            Err(())
-        }
-    }
+pub fn compile_any(path: &String, config: &Config, mode: CompileMode) -> Result<Option<Child>, ()> {
+    let (name, ext) = path.split_once(".").unwrap();
+    let lang = Language::from_ext(ext)?;
+
+    Ok(match lang {
+        Cpp => Some(compile_cpp(name, ext, config, mode)?),
+        Rust => Some(compile_rust(name, ext, config, mode)?),
+        Python => {
+            copy_file(path)?;
+            None
+        },
+    })
 }

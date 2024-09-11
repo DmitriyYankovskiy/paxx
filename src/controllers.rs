@@ -10,13 +10,13 @@ pub fn check(flags: &Flags) {
     if flags.contains("r") {
         Config::write(&mut Config::default());
     } 
-    if let Ok(_) = Config::load_and_check() {
+    if let Ok(_) = Config::load() {
         log::ok("config", "is valid");
     }
 }
 
 pub fn build(flags: &Flags) -> Result<(), ()> {
-    let config = Config::load_and_check()?;
+    let config = Config::load()?;
 
     let mut hashes = Hashes::load(flags);
     let _ = cmd::build::all(&config, &mut hashes);
@@ -40,14 +40,14 @@ pub fn run(args: &Vec<String>, flags: &Flags) -> Result<(), ()> {
         }
     };
 
-    let config = Config::load_and_check()?;
+    let config = Config::load()?;
 
     let mut hashes = Hashes::load(flags);
     let build_res = cmd::build::all(&config, &mut hashes);
     Hashes::write(&mut hashes);
     build_res?;
 
-    cmd::run::all(tests_count, None, &config, flags)?;
+    cmd::run::all(tests_count, None, &config, &mut hashes, flags)?;
     Ok(())
 }
 
@@ -84,14 +84,14 @@ pub fn catch(args: &Vec<String>, flags: &Flags) -> Result<(), ()> {
         }
     };
 
-    let config = Config::load_and_check()?;
+    let config = Config::load()?;
 
     let mut hashes = Hashes::load(&flags);
     let build_res = cmd::build::all(&config, &mut hashes);
     Hashes::write(&mut hashes);
     build_res?;
 
-    cmd::run::all(tests_count, Some(errors_count), &config, &flags)?;
+    cmd::run::all(tests_count, Some(errors_count), &config, &mut hashes, &flags)?;
 
     Ok(())
 }
@@ -101,7 +101,7 @@ pub fn remove() {
 }
 
 pub fn get(args: &Vec<String>) -> Result<(), ()> {
-    let config = Config::load_and_check()?;
+    let config = Config::load()?;
 
     let arg2 = args.get(2);
     let arg2 = if let Some(arg2) = arg2 {
@@ -139,12 +139,7 @@ pub fn pat(args: &Vec<String>, flags: &Flags) -> Result<(), ()> {
             let arg3 = if let Some(arg3) = arg3 {
                 arg3.clone()
             } else {
-                if let Some(p) = Config::load()?.test_gen_path {
-                    p
-                } else {
-                    log::error("tests generator", "not found");
-                    return Err(());
-                }
+                Config::load()?.get_generator_path()?
             };
 
             cmd::pat::gen(&arg3, &flags);
@@ -162,7 +157,7 @@ pub fn pat(args: &Vec<String>, flags: &Flags) -> Result<(), ()> {
             let arg3 = if let Some(arg3) = arg3 {
                 arg3.clone()
             } else {
-                Config::load()?.solution_path
+                Config::load()?.get_solution_path()?
             };
             cmd::pat::std(&arg3, &flags);
 
@@ -179,7 +174,7 @@ pub fn pat(args: &Vec<String>, flags: &Flags) -> Result<(), ()> {
 }
 
 pub fn solo(flags: &Flags) -> Result<(), ()> {
-    let config = Config::load_and_check()?;
+    let config = Config::load()?;
 
     let mut hashes = Hashes::load(&flags);
     let build_res = cmd::build::all(&config, &mut hashes);

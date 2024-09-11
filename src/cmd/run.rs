@@ -3,10 +3,10 @@ use colored::{Color, Colorize};
 use std::{cmp::{max, min}, fs, io::{BufReader, Read}, time::Duration};
 
 use crate::{
-    config::{self, Config}, log, paths, utils::run::{self, RunResult}, Flags
+    config::{self, Config}, hashes::Hashes, log, paths, utils::run::{self, RunResult}, Flags
 };
 
-pub fn all<'a>(tests_count: usize, errors_count: Option<usize>, config: &Config, flags: &'a Flags) -> Result<(), ()> {
+pub fn all<'a>(tests_count: usize, errors_count: Option<usize>, config: &Config, hashes: &mut Hashes, flags: &'a Flags) -> Result<(), ()> {
     if  let config::TestingMode::Manual = config.testing_mode {
         log::error("[Manual mode]", "cannot running");
         return Err(());
@@ -14,9 +14,9 @@ pub fn all<'a>(tests_count: usize, errors_count: Option<usize>, config: &Config,
     log::status("run ...");
     println!();
     let mut errors = Vec::<usize>::new();
-    let created_tests_count = fs::read_dir(paths::tests_dir()).unwrap().count();
-    let created_solution_res_count = fs::read_dir(paths::solution_results_dir()).unwrap().count();
-    let created_reference_res_count = fs::read_dir(paths::ref_results_dir()).unwrap().count();
+    let created_tests_count = hashes.test_gen_count;
+    let created_solution_res_count = hashes.solution_results_count;
+    let created_reference_res_count = hashes.reference_results_count;
     let mut durations = Vec::<Duration>::new();
     'tests: for test_number in 1..=tests_count {
         if test_number > created_tests_count {
@@ -59,7 +59,17 @@ pub fn all<'a>(tests_count: usize, errors_count: Option<usize>, config: &Config,
         }
     };
 
+    match config.testing_mode {
+        config::TestingMode::ComparisonResults | config::TestingMode::AutoComparisonResults => {
+            hashes.reference_results_count = tests_count;
+        },
+    
+        _ => {}
+    }
 
+    hashes.test_gen_count = tests_count;
+    hashes.solution_results_count = tests_count;
+    Hashes::write(hashes);
 
     println!();
 

@@ -1,11 +1,11 @@
 use std::{fs, process::Command, str::from_utf8, time::{self, Duration}};
 
-use crate::{log::{self, error}, paths, utils::compile};
+use crate::{log::{self, error}, paths, Language};
 
 fn run_cmd(path: &str) -> Result<Command, ()> {
-    let (path, ext) = path.split_once(".").unwrap();
-    let ext = compile::executable_ext(ext);
-    Ok(match ext.as_str() {
+    let (_, ext) = path.split_once(".").unwrap();
+    let ext = Language::from_ext(ext)?.get_executable_ext();
+    Ok(match ext {
         "exe" => Command::new(format!("./{}/{path}.{ext}", paths::build_dir())),
         "py" => {
             let mut cmd = Command::new("python3");
@@ -18,7 +18,7 @@ fn run_cmd(path: &str) -> Result<Command, ()> {
         }
     })
 }
-
+// --===---
 pub struct RunResult {
     pub output: Option<String>,
     pub duration: Duration,

@@ -26,12 +26,16 @@ pub fn get_hash_file(path: &String) -> u64 {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Hashes {
-    pub test_gen: u64,
-    pub solution: u64,
+    pub generator: Option<u64>,
+    pub solution: Option<u64>,
     pub reference: Option<u64>,
 
     pub comparator: Option<u64>,
-    pub res_checker: Option<u64>,
+    pub checker: Option<u64>,
+
+    pub generator_count: usize,
+    pub solution_results_count: usize,
+    pub reference_results_count: usize,
 }
 
 impl Hashes {
@@ -55,12 +59,16 @@ impl Hashes {
 impl Default for Hashes {
     fn default() -> Self {
         Self {
-            test_gen: 0,
-            solution: 0,
+            generator: None,
+            solution: None,
             reference: None,
 
             comparator: None,
-            res_checker: None,
+            checker: None,
+
+            generator_count: 0,
+            solution_results_count: 0,
+            reference_results_count: 0,
         }
     }
 }

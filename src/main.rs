@@ -11,6 +11,34 @@ use std::{collections::HashSet, env, time::Instant};
 
 use colored::Colorize;
 use log::error;
+use serde::{Deserialize, Serialize};
+
+
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Language {
+    Cpp,
+    Rust,
+    Python,
+}
+
+impl Language {
+    pub fn from_ext(s: &str) -> Result<Self, ()> {
+        match s {
+            "cpp" | "c++" => Ok(Self::Cpp),
+            "rs" => Ok(Self::Rust),
+            "py" => Ok(Self::Python),
+            _ => Err(()),
+        }
+    }
+
+    pub fn get_executable_ext(&self) -> &str {
+        match self {
+            Self::Cpp | Self::Rust => "exe",
+            _ => "py",
+        }
+    }
+}
+
 
 fn index() {
     println!("{} {}", "code manager", "PAXX ".bold().on_purple());

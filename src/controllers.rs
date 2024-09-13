@@ -1,6 +1,6 @@
 use std::fs;
 
-use crate::{cmd, config::Config, hashes::Hashes, log, paths, utils, Flags};
+use crate::{cmd::{self, stress}, config::Config, hashes::Hashes, log, paths, utils, Flags};
 
 pub fn init() {
     cmd::init::all();
@@ -15,24 +15,11 @@ pub fn check(flags: &Flags) {
     }
 }
 
-pub fn build(flags: &Flags) -> Result<(), ()> {
-    let config = Config::load()?;
+pub fn stress(args: &mut utils::arg::Args, flags: &Flags) -> Result<(), ()> {
+    let mode = args.get("mode")?.parse()?;
 
-    let mut hashes = Hashes::load(flags);
-    let _ = cmd::build::all(&config, &mut hashes);
-    Hashes::write(&mut hashes);
-    Ok(())
-}
-
-pub fn run(args: &Vec<String>, flags: &Flags) -> Result<(), ()> {
-    let arg2 = args.get(2);
-    let arg2 = if let Some(arg2) = arg2 {
-        arg2.clone()
-    } else {
-        log::error("tests_count", "not found");
-        return Err(());
-    }; 
-    let tests_count: usize = match arg2.parse() {
+    let test_count = args.get("test count")?;
+    let tests_count: usize = match test_count.parse() {
         Ok(count) => count,
         Err(_) => {
             log::error("tests_count", "incorrect");
@@ -42,57 +29,46 @@ pub fn run(args: &Vec<String>, flags: &Flags) -> Result<(), ()> {
 
     let config = Config::load()?;
 
-    let mut hashes = Hashes::load(flags);
-    let build_res = cmd::build::all(&config, &mut hashes);
-    Hashes::write(&mut hashes);
-    build_res?;
+    let mut hashes = Hashes::connect(flags);
+    cmd::stress::build::all(&config, &mut hashes, mode)?;
 
-    cmd::run::all(tests_count, None, &config, &mut hashes, flags)?;
+    cmd::stress::all(tests_count, stress::StopMode::All, mode, &config, &mut hashes, flags)?;
     Ok(())
 }
 
-pub fn catch(args: &Vec<String>, flags: &Flags) -> Result<(), ()> {
-    let arg2 = args.get(2);
-    let arg2 = if let Some(arg2) = arg2 {
-        arg2.clone()
-    } else {
-        log::error("errors count", "not found");
-        return Err(());
-    }; 
-
-    let arg3 = args.get(3);
-    let arg3 = if let Some(arg3) = arg3 {
-        arg3.clone()
-    } else {
-        log::error("tests count", "not found");
-        return Err(());
+pub fn catch(args: &mut utils::arg::Args, flags: &Flags) -> Result<(), ()> {
+    let mode = args.get("mode")?;
+    let mode = match mode.as_str() {
+        "check" => stress::Mode::Check,
+        "comp" => stress::Mode::Compare,
+        "acomp" => stress::Mode::AutoCompare,
+        _ => {log::error("mode", "incorrect"); return Err(())}
     };
 
-    let tests_count: usize = match arg3.parse() {
+    let mistakes_cap = args.get("mistakes cap")?;
+    let mistakes_cap: usize = match mistakes_cap.parse() {
         Ok(count) => count,
         Err(_) => {
-            log::error("tests count", "incorrect");
+            log::error("tests_count", "incorrect");
             return Err(());
         }
     };
 
-    let errors_count: usize = match arg2.parse() {
+    let test_count = args.get("test count")?;
+    let tests_count: usize = match test_count.parse() {
         Ok(count) => count,
         Err(_) => {
-            log::error("errors count", "incorrect");
+            log::error("tests_count", "incorrect");
             return Err(());
         }
     };
 
     let config = Config::load()?;
 
-    let mut hashes = Hashes::load(&flags);
-    let build_res = cmd::build::all(&config, &mut hashes);
-    Hashes::write(&mut hashes);
-    build_res?;
+    let mut hashes = Hashes::connect(flags);
+    cmd::stress::build::all(&config, &mut hashes, mode)?;
 
-    cmd::run::all(tests_count, Some(errors_count), &config, &mut hashes, &flags)?;
-
+    cmd::stress::all(tests_count, stress::StopMode::UpToMistake(mistakes_cap), mode, &config, &mut hashes, flags)?;
     Ok(())
 }
 
@@ -100,17 +76,8 @@ pub fn remove() {
     fs::remove_dir_all(paths::dir()).unwrap();
 }
 
-pub fn get(args: &Vec<String>) -> Result<(), ()> {
-    let config = Config::load()?;
-
-    let arg2 = args.get(2);
-    let arg2 = if let Some(arg2) = arg2 {
-        arg2.clone()
-    } else {
-        log::error("tests number", "not found");
-        return Err(());
-    }; 
-    let test_number: usize = match arg2.parse() {
+pub fn get(args: &mut utils::arg::Args) -> Result<(), ()> {
+    let test_number: usize = match args.get("test number")?.parse() {
         Ok(count) => count,
         Err(_) => {
             log::error("tests number", "incorrect");
@@ -118,53 +85,45 @@ pub fn get(args: &Vec<String>) -> Result<(), ()> {
         }
     };
 
+    let mode = args.get("mode")?.parse()?;
 
-    cmd::get::all(test_number, &config)?;
+
+    cmd::stress::get::all(test_number, mode)?;
     Ok(())
 }
 
-pub fn pat(args: &Vec<String>, flags: &Flags) -> Result<(), ()> {
-    let arg2 = args.get(2);
-    let arg2 = if let Some(arg2) = arg2 {
-        arg2.clone()
-    } else {
-        log::error("pattern", "not found");
-        return Err(());
-    };
+pub fn pat(args: &mut utils::arg::Args, flags: &Flags) -> Result<(), ()> {
+    let pattern = args.get("pattern")?;
 
 
-    match arg2.as_str() {
-        "gen" => {
-            let arg3 = args.get(3);
-            let arg3 = if let Some(arg3) = arg3 {
-                arg3.clone()
+    match pattern.as_str() {
+        "generator" => {
+            let path = if let Some(p) = args.try_get() {
+                p.clone()
             } else {
                 Config::load()?.get_generator_path()?
             };
 
-            cmd::pat::gen(&arg3, &flags);
+            cmd::pat::gen(&path, &flags);
             if flags.contains("s") {
-                cmd::cfg::set_test_gen(&arg3)?;
+                cmd::cfg::set_test_gen(&path)?;
             }
-        },
-
+        }
         "edit_cfg_c++_vscode" => {
             cmd::pat::edit_cfg_cpp_vscode(&".editorconfig".to_string(), &flags);
-        },
-
-        "std" => {
-            let arg3 = args.get(3);
-            let arg3 = if let Some(arg3) = arg3 {
-                arg3.clone()
+        }
+        "solution" => {
+            let path = if let Some(p) = args.try_get() {
+                p.clone()
             } else {
-                Config::load()?.get_solution_path()?
+                Config::load()?.get_generator_path()?
             };
-            cmd::pat::std(&arg3, &flags);
+            cmd::pat::std(&path, &flags);
 
             if flags.contains("s") {
-                cmd::cfg::set_solution(&arg3)?;
+                cmd::cfg::set_solution(&path)?;
             }
-        },
+        }
         _ => {
             log::error("pattern", "incorrect");
             return Err(());
@@ -173,40 +132,26 @@ pub fn pat(args: &Vec<String>, flags: &Flags) -> Result<(), ()> {
     Ok(())
 }
 
-pub fn solo(flags: &Flags) -> Result<(), ()> {
+pub fn run(flags: &Flags) -> Result<(), ()> {
     let config = Config::load()?;
 
-    let mut hashes = Hashes::load(&flags);
-    let build_res = cmd::build::all(&config, &mut hashes);
-    Hashes::write(&mut hashes);
-    build_res?;
+    let mut hashes = Hashes::connect(&flags);
+    cmd::run::build::all(&config, &mut hashes)?;
 
-    cmd::solo::solution(&Config::load()?)?;
+    cmd::run::solution(&Config::load()?)?;
     Ok(())
 }
 
-pub fn cfg(args: &Vec<String>, flags: &Flags) -> Result<(), ()> {
-    let arg2 = args.get(2);
-    let arg2 = if let Some(arg2) = arg2 {
-        arg2.clone()
-    } else {
-        log::error("field", "not found");
-        return Err(());
-    };
+pub fn cfg(args: &mut utils::arg::Args, flags: &Flags) -> Result<(), ()> {
+    let field = args.get("field")?;
 
-    let arg3 = args.get(3);
-    let arg3 = if let Some(arg3) = arg3 {
-        arg3.clone()
-    } else {
-        log::error("path", "not found");
-        return Err(());
-    };
+    let path = args.get("path")?;
 
-    utils::file::create_file(arg3.clone(), "", &flags);
+    utils::file::create_file(path.clone(), "", &flags);
 
-    match arg2.as_str() {
+    match field.as_str() {
         "sample" => {
-            cmd::cfg::set_sample(&arg3)?;
+            cmd::cfg::set_sample(&path)?;
         }
         _ => {
             log::error("field", "incorrect");

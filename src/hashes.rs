@@ -33,13 +33,13 @@ pub struct Hashes {
     pub comparator: Option<u64>,
     pub checker: Option<u64>,
 
-    pub generator_count: usize,
+    pub tests_count: usize,
     pub solution_results_count: usize,
     pub reference_results_count: usize,
 }
 
 impl Hashes {
-    pub fn load(flags: &Flags) -> Self {
+    pub fn connect(flags: &Flags) -> Self {
         if flags.contains("r") {
             return Default::default();
         }
@@ -56,6 +56,12 @@ impl Hashes {
     }
 }
 
+impl Drop for Hashes {
+    fn drop(&mut self) {
+        Self::write(self);
+    }
+}
+
 impl Default for Hashes {
     fn default() -> Self {
         Self {
@@ -66,7 +72,7 @@ impl Default for Hashes {
             comparator: None,
             checker: None,
 
-            generator_count: 0,
+            tests_count: 0,
             solution_results_count: 0,
             reference_results_count: 0,
         }

@@ -4,7 +4,7 @@ use crate::{config::Config, log};
 
 pub fn set_solution(path: &String) -> Result<(), ()> {
     let mut config = Config::load()?;
-    config.solution_path = path.clone();
+    config.solution_path = Some(path.clone());
     log::ok("cfg: solution_path", "set on:");
     println!("---> {}", path.blue().bold());
     Config::write(&mut config);
@@ -13,7 +13,7 @@ pub fn set_solution(path: &String) -> Result<(), ()> {
 
 pub fn set_test_gen(path: &String) -> Result<(), ()> {
     let mut config = Config::load()?;
-    config.test_gen_path = Some(path.clone());
+    config.generator_path = Some(path.clone());
     log::ok("cfg: test_gen_path", "set on:");
     println!("---> {}", path.blue().bold());
     Config::write(&mut config);

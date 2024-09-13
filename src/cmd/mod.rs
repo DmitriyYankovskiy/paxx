@@ -1,7 +1,5 @@
-pub mod build;
 pub mod init;
-pub mod run;
-pub mod get;
+pub mod stress;
 pub mod pat;
-pub mod solo;
+pub mod run;
 pub mod cfg;

@@ -6,12 +6,15 @@ mod cmd;
 mod utils;
 mod log;
 mod controllers;
+mod buisness;
 
-use std::{collections::HashSet, env, time::Instant};
+use std::{collections::HashSet, time::Instant};
 
 use colored::Colorize;
-use log::error;
 use serde::{Deserialize, Serialize};
+
+use log::error;
+use utils::arg::Args; 
 
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -31,7 +34,7 @@ impl Language {
         }
     }
 
-    pub fn get_executable_ext(&self) -> &str {
+    pub fn get_executable_ext(&self) -> &'static str {
         match self {
             Self::Cpp | Self::Rust => "exe",
             _ => "py",
@@ -39,27 +42,24 @@ impl Language {
     }
 }
 
+type Flags = HashSet<String>;
+
+const CAP: usize = 50_000;
+
 
 fn index() {
     println!("{} {}", "code manager", "PAXX ".bold().on_purple());
 }
 
-type Flags = HashSet<String>;
 
 
 
-fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
+fn cmd<'a>(args: &mut Args) -> Result<(), ()> {
     let start_time = Instant::now();
-    let command = match args.get(1) {
-        Some(c) => c.clone(),
-        None => {
-            index();
-            return Ok(());
-        }
-    };
+    let command = args.get("command")?;
 
     let mut flags = Flags::new();
-    for arg in args {
+    for arg in &args.args {
         if arg.starts_with('-') {
             flags.insert(arg[1..].to_string());
         }
@@ -69,49 +69,38 @@ fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
     println!(":");
 
     match command.as_str() {
+        "index" => index(),
         "init" => {
             controllers::init();
         }
-
         "check" => {
             controllers::check(&flags);
         }
-
-        "build" => {
-            controllers::build(&flags)?;
+        "stress" => {
+            controllers::stress(args, &flags)?;
         }
-
-        "run" => {
-            controllers::run(&args, &flags)?;
-        }
-
         "catch" => {
             controllers::catch(args, &flags)?;
         }
-
         "remove" => {
             controllers::remove();
         }
-
         "get" => {
-            controllers::get(&args)?;
+            controllers::get(args)?;
         }
-
         "pat" => {
             controllers::pat(args, &flags)?;
         }
-
-        "solo" => {
-            controllers::solo(&flags)?;
+        "run" => {
+            controllers::run(&flags)?;
         }
-
         "cfg" => {
             controllers::cfg(args, &flags)?;
         }
-
         _ => {
-            error("command", "incorrect");
-        },
+            error("command", "incorrect"); 
+            return Err(());
+        }
     };
 
 
@@ -123,6 +112,6 @@ fn cmd<'a>(args: &'a Vec<String>) -> Result<(), ()> {
 }
 
 fn main() {
-    let args: Vec<String> = env::args().collect();
-    let _ = cmd(&args);
+    let mut args = Args::init();
+    let _ = cmd(&mut args);
 }

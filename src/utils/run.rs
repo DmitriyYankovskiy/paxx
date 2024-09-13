@@ -4,7 +4,7 @@ use crate::{log::{self, error}, paths, Language};
 
 fn run_cmd(path: &str) -> Result<Command, ()> {
     let (_, ext) = path.split_once(".").unwrap();
-    let ext = Language::from_ext(ext)?.get_executable_ext();
+    let ext = {let lang = Language::from_ext(ext)?; lang.get_executable_ext()};
     Ok(match ext {
         "exe" => Command::new(format!("./{}/{path}.{ext}", paths::build_dir())),
         "py" => {
@@ -18,7 +18,7 @@ fn run_cmd(path: &str) -> Result<Command, ()> {
         }
     })
 }
-// --===---
+
 pub struct RunResult {
     pub output: Option<String>,
     pub duration: Duration,

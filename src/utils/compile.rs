@@ -5,20 +5,20 @@ use crate::{
     config::Config, paths
 };
 
-pub enum CompileMode {
+pub enum Mode {
     Std,
     Dbg,
 }
 
-fn compile_rust(path: &str, ext: &str, config: &Config, mode: CompileMode) -> Result<Child, ()> {
+fn rust(path: &str, ext: &str, config: &Config, mode: Mode) -> Result<Child, ()> {
     let lang: Language = Language::Rust;
 
     let from = format!("{path}.{ext}");
     let to = format!("{}/{}.{}", paths::build_dir(), path, "exe");
     let mut args = vec![from, String::from("-o"), to];
     args.append(&mut match mode {
-        CompileMode::Std => config.get_compile_std_args(lang),
-        CompileMode::Dbg => config.get_compile_dbg_args(lang),
+        Mode::Std => config.get_compile_std_args(lang),
+        Mode::Dbg => config.get_compile_dbg_args(lang),
     });
 
     if let Ok(child) = Command::new("rustc")
@@ -30,15 +30,15 @@ fn compile_rust(path: &str, ext: &str, config: &Config, mode: CompileMode) -> Re
     }
 }
 
-fn compile_cpp(name: &str, ext: &str, config: &Config, mode: CompileMode) -> Result<Child, ()> {
+fn cpp(name: &str, ext: &str, config: &Config, mode: Mode) -> Result<Child, ()> {
     let lang: Language = Language::Cpp;
 
     let from = format!("{name}.{ext}");
     let to = format!("{}/{}.{}", paths::build_dir(), name, "exe");
     let mut args = vec![from, String::from("-o"), to];
     args.append(&mut match mode {
-        CompileMode::Std => config.get_compile_std_args(lang),
-        CompileMode::Dbg => config.get_compile_dbg_args(lang),
+        Mode::Std => config.get_compile_std_args(lang),
+        Mode::Dbg => config.get_compile_dbg_args(lang),
     });
 
     if let Ok(child) = Command::new("rustc")
@@ -55,13 +55,13 @@ pub fn copy_file(path: &str) -> Result<(), ()> {
     Ok(())
 }
 
-pub fn compile_any(path: &String, config: &Config, mode: CompileMode) -> Result<Option<Child>, ()> {
+pub fn any(path: &String, config: &Config, mode: Mode) -> Result<Option<Child>, ()> {
     let (name, ext) = path.split_once(".").unwrap();
     let lang = Language::from_ext(ext)?;
 
     Ok(match lang {
-        Cpp => Some(compile_cpp(name, ext, config, mode)?),
-        Rust => Some(compile_rust(name, ext, config, mode)?),
+        Cpp => Some(cpp(name, ext, config, mode)?),
+        Rust => Some(rust(name, ext, config, mode)?),
         Python => {
             copy_file(path)?;
             None

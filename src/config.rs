@@ -6,15 +6,15 @@ use crate::{log, paths, Language};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {
-    solution_path: Option<String>,
-    generator_path: Option<String>,
+    pub solution_path: Option<String>,
+    pub generator_path: Option<String>,
 
-    reference_path: Option<String>,
+    pub reference_path: Option<String>,
 
-    comparator_path: Option<String>,
-    checker_path: Option<String>,
+    pub comparator_path: Option<String>,
+    pub checker_path: Option<String>,
 
-    sample_path: Option<String>,
+    pub sample_path: Option<String>,
 
     compile_std_args: HashMap<Language, Vec<String>>,
     compile_dbg_args: HashMap<Language, Vec<String>>,
@@ -61,7 +61,7 @@ impl Config {
         let mut file = if let Ok(f) = fs::File::open(paths::config()) {
             f
         } else {
-            log::error("config", "was corrupted");
+            log::error("config path", "was corrupted");
             return Err(());
         };
         let mut config = String::new();
@@ -69,7 +69,7 @@ impl Config {
         let config: Config = match serde_yml::from_str(config.as_str()) {
             Ok(cfg) => cfg,
             Err(_) => {
-                log::error("config file", "incorrect");
+                log::error("config file path", "incorrect");
                 return Err(())
             },
         };
@@ -77,65 +77,82 @@ impl Config {
     }
 
     pub fn get_solution_path(&self) -> Result<String, ()> {
-        let path = self.solution_path;
-        if path == None || !Path::new(&path.unwrap()).exists() {
-            log::error("test gen", "not found");
-            Err(())
-        } else {
-            Ok(path.unwrap())
+        let path = self.solution_path.clone();
+        if let Some(p) = path {
+            if Path::new(&p).exists() {
+                
+                return Ok(p);
+            }
         }
+
+        log::error("solution path", "not found");
+        Err(())
     }
 
     pub fn get_sample_path(&self) -> Result<String, ()> {
-        let path = self.sample_path;
-        if path == None || !Path::new(&path.unwrap()).exists() {
-            log::error("sample", "not found");
-            Err(())
-        } else {
-            Ok(path.unwrap())
+        let path = self.sample_path.clone();
+        if let Some(p) = path {
+            if Path::new(&p).exists() {
+                
+                return Ok(p);
+            }
         }
+
+        log::error("sample path", "not found");
+        Err(())
     }
 
     pub fn get_generator_path(&self) -> Result<String, ()> {
-        let path = self.generator_path;
-        if path == None || !Path::new(&path.unwrap()).exists() {
-            log::error("generator", "not found");
-            Err(())
-        } else {
-            Ok(path.unwrap())
+        let path = self.generator_path.clone();
+        if let Some(p) = path {
+            if Path::new(&p).exists() {
+                
+                return Ok(p);
+            }
         }
+
+        log::error("generator path", "not found");
+        Err(())
     }
 
     pub fn get_checker_path(&self) -> Result<String, ()> {
-        let path = self.checker_path;
-        if path == None || !Path::new(&path.unwrap()).exists() {
-            log::error("checker", "not found");
-            Err(())
-        } else {
-            Ok(path.unwrap())
+        let path = self.checker_path.clone();
+        if let Some(p) = path {
+            if Path::new(&p).exists() {
+                
+                return Ok(p);
+            }
         }
-    }
 
+        log::error("checker path", "not found");
+        Err(())
+    }
     
 
     pub fn get_reference_path(&self) -> Result<String, ()> {
-        let path = self.reference_path;
-        if path == None || !Path::new(&path.unwrap()).exists() {
-            log::error("reference", "not found");
-            Err(())
-        } else {
-            Ok(path.unwrap())
+        let path = self.reference_path.clone();
+        if let Some(p) = path {
+            if Path::new(&p).exists() {
+                
+                return Ok(p);
+            }
         }
+
+        log::error("reference path", "not found");
+        Err(())
     }
 
     pub fn get_comparator_path(&self) -> Result<String, ()> {
-        let path = self.comparator_path;
-        if path == None || !Path::new(&path.unwrap()).exists() {
-            log::error("comparator", "not found");
-            Err(())
-        } else {
-            Ok(path.unwrap())
+        let path = self.comparator_path.clone();
+        if let Some(p) = path {
+            if Path::new(&p).exists() {
+                
+                return Ok(p);
+            }
         }
+
+        log::error("comparator path", "not found");
+        Err(())
     }
     
     

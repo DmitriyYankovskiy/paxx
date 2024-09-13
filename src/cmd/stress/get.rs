@@ -1,15 +1,15 @@
 use colored::Colorize;
 
 use std::{fs, io::{BufRead, BufReader}};
+use super::Mode;
+use crate::{log::{self, error}, paths};
 
-use crate::{config::Config, log::{self, error}, paths};
-
-pub fn all(number: usize, config: &Config) -> Result<(), ()> {
+pub fn all(number: usize, mode: Mode) -> Result<(), ()> {
     test(number)?;
     solution_result(number)?;
-    match config.testing_mode {
-        crate::config::TestingMode::ComparisonResults | crate::config::TestingMode::AutoComparisonResults => {
-            ref_result(number)?
+    match mode {
+        Mode::Compare | Mode::AutoCompare => {
+            reference_result(number)?
         }
         _ => {}
     }
@@ -56,7 +56,7 @@ fn solution_result(number: usize) -> Result<(), ()> {
     Ok(())
 }
 
-fn ref_result(number: usize) -> Result<(), ()> {
+fn reference_result(number: usize) -> Result<(), ()> {
     let file = if let Ok(f) = fs::File::open(&format!("{}/{}.dat", paths::ref_results_dir(), number)) {
         f
     } else {

@@ -16,8 +16,3 @@ pub fn touch_dir(path: &String) {
         fs::create_dir(path).unwrap();
     }
 }
-
-pub fn remove_all_in_dir(path: &String) {
-    fs::remove_dir_all(path).unwrap();
-    fs::create_dir(path).unwrap();
-}

@@ -63,7 +63,7 @@ impl Verdict {
     } 
 }
 
-pub fn all<'a>(tests_count: usize, stop_mode: StopMode, mode: Mode, config: &Config, hashes: &mut Hashes, flags: &'a Flags, ) -> Result<(), ()> {
+pub fn all<'a>(tests_count: usize, stop_mode: StopMode, mode: Mode, config: &Config, hashes: &mut Hashes, flags: &'a Flags) -> Result<(), ()> {
     log::status("stress ...");
     println!();
     let mut mistakes = Vec::<usize>::new();

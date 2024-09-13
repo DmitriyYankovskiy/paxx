@@ -41,7 +41,7 @@ fn cpp(name: &str, ext: &str, config: &Config, mode: Mode) -> Result<Child, ()> 
         Mode::Dbg => config.get_compile_dbg_args(lang),
     });
 
-    if let Ok(child) = Command::new("rustc")
+    if let Ok(child) = Command::new("g++")
     .args(args)
     .spawn() {
         Ok(child)

@@ -1,4 +1,4 @@
-use std::env;
+use std::{collections::VecDeque, env};
 
 use crate::log;
 
@@ -8,8 +8,10 @@ pub struct Args {
 
 impl Args {
     pub fn init() -> Self {
+        let mut args = env::args().collect::<VecDeque<String>>();
+        args.pop_front();
         Self {
-            args: env::args().collect(),
+            args,
         }
     }
 

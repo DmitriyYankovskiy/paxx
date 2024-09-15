@@ -6,7 +6,7 @@ use colored::{Color, Colorize};
 use std::{cmp::{max, min}, fs, io::{BufReader, Read}, str::FromStr, time::Duration, usize};
 
 use crate::{
-    config::Config, hashes::Hashes, log, paths, utils::run::{self, RunResult}, Flags, CAP
+    config::Config, hashes::Hashes, out, paths, utils::run::{self, RunResult}, Flags, CAP
 };
 
 #[derive(Clone, Copy)]
@@ -23,7 +23,7 @@ impl FromStr for Mode {
             "check" => Ok(Mode::Check),
             "comp" => Ok(Mode::Compare),
             "acomp" => Ok(Mode::AutoCompare),
-            _ => {log::error("mode", "incorrect"); Err(())}
+            _ => {out::error("mode", "incorrect"); Err(())}
         }
     }
 }
@@ -46,7 +46,7 @@ impl FromStr for Verdict {
             "OK" => Ok(Self::OK),
             "WA" => Ok(Self::WA),
             _ => {
-                log::error(format!("velidator's verdict: {s}").as_str(), "invalid");
+                out::error(format!("velidator's verdict: {s}").as_str(), "invalid");
                 Err(())
             },
         }
@@ -64,7 +64,7 @@ impl Verdict {
 }
 
 pub fn all<'a>(tests_count: usize, stop_mode: StopMode, mode: Mode, config: &Config, hashes: &mut Hashes, flags: &'a Flags) -> Result<(), ()> {
-    log::status("stress ...");
+    out::status("stress ...");
     println!();
     let mut mistakes = Vec::<usize>::new();
     let mut max_duration = Duration::ZERO;
@@ -161,7 +161,7 @@ fn get_verdict(test: usize, mut output: String, flags: &Flags) -> Result<Verdict
     let (verdict, comment) = match output.split_once(" ") {
         Some(vc) => vc,
         None => {
-            log::error("result checker output", "incorrect:");
+            out::error("result checker output", "incorrect:");
             println!("{}", output);
             return Err(());
         }

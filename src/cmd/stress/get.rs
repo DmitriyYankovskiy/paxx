@@ -2,7 +2,7 @@ use colored::Colorize;
 
 use std::{fs, io::{BufRead, BufReader}};
 use super::Mode;
-use crate::{log::{self, error}, paths};
+use crate::{out::{self, error}, paths};
 
 pub fn all(number: usize, mode: Mode) -> Result<(), ()> {
     test(number)?;
@@ -41,7 +41,7 @@ fn solution_result(number: usize) -> Result<(), ()> {
     let file = if let Ok(f) = fs::File::open(&format!("{}/{}.dat", paths::solution_results_dir(), number)) {
         f
     } else {
-        log::error("solution results", "corrupted");
+        out::error("solution results", "corrupted");
         return Err(());
     };
     println!("{}", "solution_result:".bold().cyan());
@@ -60,7 +60,7 @@ fn reference_result(number: usize) -> Result<(), ()> {
     let file = if let Ok(f) = fs::File::open(&format!("{}/{}.dat", paths::ref_results_dir(), number)) {
         f
     } else {
-        log::error("reference results", "corrupted");
+        out::error("reference results", "corrupted");
         return Err(());
     };
 

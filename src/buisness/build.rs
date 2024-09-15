@@ -3,7 +3,7 @@ use std::process::Child;
 use crate::{
     config::Config,
     hashes::{get_hash_file, Hashes},
-    log,
+    out,
     utils::compile::{self, any},
 };
 
@@ -19,7 +19,7 @@ impl Builder {
     }
 
     pub fn build(self) -> Result<(), ()> {
-        log::status("build ...");
+        out::status("build ...");
         let mut res = Ok(());
 
         for child in self.childs {
@@ -29,10 +29,10 @@ impl Builder {
                     status = child.wait().unwrap().success();
                 }
                 if status {
-                    log::info(&path, " - succesful compiled");
+                    out::info(&path, " - succesful compiled");
                 } else {
                     res = Err(());
-                    log::error(&path, " - compiled with error");
+                    out::error(&path, " - compiled with error");
                 }
             }
         }

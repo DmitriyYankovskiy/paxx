@@ -1,6 +1,6 @@
 use std::{fs, process::Command, str::from_utf8, time::{self, Duration}};
 
-use crate::{log::{self, error}, paths, Language};
+use crate::{out::{self, error}, paths, Language};
 
 fn run_cmd(path: &str) -> Result<Command, ()> {
     let (name, ext) = path.split_once(".").unwrap();
@@ -51,17 +51,17 @@ pub fn run(path: &String, input: Option<&String>, output: Option<&String>, args:
                     duration: start_time.elapsed(),
                 })
             } else {
-                log::error("code output", "incorrect");
+                out::error("code output", "incorrect");
                 Err(None)
             }
         } else {
-            log::error(&path, "execute with error");
+            out::error(&path, "execute with error");
             println!("{:#?}", output.status);
             let output =  String::from_utf8(output.stdout);
             let output = if let Ok(o) = output {
                 o
             } else {
-                log::error(&path, "incorrect output");
+                out::error(&path, "incorrect output");
                 return Err(None);
             };
             Err(Some(output))
@@ -74,7 +74,7 @@ pub fn run(path: &String, input: Option<&String>, output: Option<&String>, args:
                 duration: start_time.elapsed(),
             })
         } else {
-            log::error(&path, "execute with error");
+            out::error(&path, "execute with error");
             println!("{:#?}", status);
             Err(None)
         }

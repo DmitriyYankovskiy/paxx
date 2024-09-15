@@ -4,11 +4,11 @@ use colored::Colorize;
 
 use crate::{
     config::Config, utils::run::{self, RunResult},
-    log,
+    out,
 };
 
 pub fn solution(config: &Config) -> Result<String, ()> {
-    log::status("run ...");
+    out::status("run ...");
     let path = config.get_solution_path()?;
     
     let result = run::run(&path, Some(&format!("{}", &config.get_sample_path()?)), None, vec![]);

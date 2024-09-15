@@ -4,7 +4,7 @@ mod hashes;
 mod paths;
 mod cmd;
 mod utils;
-mod log;
+mod out;
 mod controllers;
 mod buisness;
 
@@ -13,7 +13,7 @@ use std::{collections::HashSet, time::Instant};
 use colored::Colorize;
 use serde::{Deserialize, Serialize};
 
-use log::error;
+use out::error;
 use utils::arg::Args; 
 
 

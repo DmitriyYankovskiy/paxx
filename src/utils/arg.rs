@@ -1,6 +1,6 @@
 use std::{collections::VecDeque, env};
 
-use crate::log;
+use crate::out;
 
 pub struct Args {
     pub args: std::collections::VecDeque<String>,
@@ -19,7 +19,7 @@ impl Args {
         if let Some(arg) = self.args.pop_front() {
             Ok(arg)
         } else {
-            log::error(&format!("arg: {name}"), "not found");
+            out::error(&format!("arg: {name}"), "not found");
             Err(())
         }
     }

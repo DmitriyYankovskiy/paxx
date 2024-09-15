@@ -1,6 +1,6 @@
 use std::fs;
 
-use crate::{cmd::{self, stress}, config::Config, hashes::Hashes, log, paths, utils, Flags};
+use crate::{cmd::{self, stress}, config::Config, hashes::Hashes, out, paths, utils, Flags};
 
 pub fn init() {
     cmd::init::all();
@@ -11,7 +11,7 @@ pub fn check(flags: &Flags) {
         Config::write(&mut Config::default());
     } 
     if let Ok(_) = Config::load() {
-        log::ok("config", "is valid");
+        out::ok("config", "is valid");
     }
 }
 
@@ -22,7 +22,7 @@ pub fn stress(args: &mut utils::arg::Args, flags: &Flags) -> Result<(), ()> {
     let tests_count: usize = match test_count.parse() {
         Ok(count) => count,
         Err(_) => {
-            log::error("tests_count", "incorrect");
+            out::error("tests_count", "incorrect");
             return Err(());
         }
     };
@@ -42,14 +42,14 @@ pub fn catch(args: &mut utils::arg::Args, flags: &Flags) -> Result<(), ()> {
         "check" => stress::Mode::Check,
         "comp" => stress::Mode::Compare,
         "acomp" => stress::Mode::AutoCompare,
-        _ => {log::error("mode", "incorrect"); return Err(())}
+        _ => {out::error("mode", "incorrect"); return Err(())}
     };
 
     let mistakes_cap = args.get("mistakes cap")?;
     let mistakes_cap: usize = match mistakes_cap.parse() {
         Ok(count) => count,
         Err(_) => {
-            log::error("tests_count", "incorrect");
+            out::error("tests_count", "incorrect");
             return Err(());
         }
     };
@@ -58,7 +58,7 @@ pub fn catch(args: &mut utils::arg::Args, flags: &Flags) -> Result<(), ()> {
     let tests_count: usize = match test_count.parse() {
         Ok(count) => count,
         Err(_) => {
-            log::error("tests_count", "incorrect");
+            out::error("tests_count", "incorrect");
             return Err(());
         }
     };
@@ -80,7 +80,7 @@ pub fn get(args: &mut utils::arg::Args) -> Result<(), ()> {
     let test_number: usize = match args.get("test number")?.parse() {
         Ok(count) => count,
         Err(_) => {
-            log::error("tests number", "incorrect");
+            out::error("tests number", "incorrect");
             return Err(());
         }
     };
@@ -125,7 +125,7 @@ pub fn pat(args: &mut utils::arg::Args, flags: &Flags) -> Result<(), ()> {
             }
         }
         _ => {
-            log::error("pattern", "incorrect");
+            out::error("pattern", "incorrect");
             return Err(());
         }
     };
@@ -154,7 +154,7 @@ pub fn cfg(args: &mut utils::arg::Args, flags: &Flags) -> Result<(), ()> {
             cmd::cfg::set_sample(&path)?;
         }
         _ => {
-            log::error("field", "incorrect");
+            out::error("field", "incorrect");
             return Err(());
         }
     }

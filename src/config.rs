@@ -2,7 +2,7 @@ use serde::{Serialize, Deserialize};
 
 use std::{collections::HashMap, fs, io::{Read, Write}, path::Path};
 
-use crate::{log, paths, Language};
+use crate::{out, paths, Language};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {
@@ -61,7 +61,7 @@ impl Config {
         let mut file = if let Ok(f) = fs::File::open(paths::config()) {
             f
         } else {
-            log::error("config path", "was corrupted");
+            out::error("config path", "was corrupted");
             return Err(());
         };
         let mut config = String::new();
@@ -69,7 +69,7 @@ impl Config {
         let config: Config = match serde_yml::from_str(config.as_str()) {
             Ok(cfg) => cfg,
             Err(_) => {
-                log::error("config file path", "incorrect");
+                out::error("config file path", "incorrect");
                 return Err(())
             },
         };
@@ -85,7 +85,7 @@ impl Config {
             }
         }
 
-        log::error("solution path", "not found");
+        out::error("solution path", "not found");
         Err(())
     }
 
@@ -98,7 +98,7 @@ impl Config {
             }
         }
 
-        log::error("sample path", "not found");
+        out::error("sample path", "not found");
         Err(())
     }
 
@@ -111,7 +111,7 @@ impl Config {
             }
         }
 
-        log::error("generator path", "not found");
+        out::error("generator path", "not found");
         Err(())
     }
 
@@ -124,7 +124,7 @@ impl Config {
             }
         }
 
-        log::error("checker path", "not found");
+        out::error("checker path", "not found");
         Err(())
     }
     
@@ -138,7 +138,7 @@ impl Config {
             }
         }
 
-        log::error("reference path", "not found");
+        out::error("reference path", "not found");
         Err(())
     }
 
@@ -151,7 +151,7 @@ impl Config {
             }
         }
 
-        log::error("comparator path", "not found");
+        out::error("comparator path", "not found");
         Err(())
     }
     

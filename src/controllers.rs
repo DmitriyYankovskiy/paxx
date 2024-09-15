@@ -7,8 +7,8 @@ pub fn init() {
 }
 
 pub fn check(flags: &Flags) {
-    if flags.contains("r") {
-        Config::write(&mut Config::default());
+    if flags.contains("re") {
+        Config::default();
     } 
     if let Ok(_) = Config::load() {
         out::ok("config", "is valid");
@@ -105,7 +105,7 @@ pub fn pat(args: &mut utils::arg::Args, flags: &Flags) -> Result<(), ()> {
             };
 
             cmd::pat::gen(&path, &flags);
-            if flags.contains("s") {
+            if flags.contains("set") {
                 cmd::cfg::set_test_gen(&path)?;
             }
         }
@@ -120,7 +120,7 @@ pub fn pat(args: &mut utils::arg::Args, flags: &Flags) -> Result<(), ()> {
             };
             cmd::pat::std(&path, &flags);
 
-            if flags.contains("s") {
+            if flags.contains("set") {
                 cmd::cfg::set_solution(&path)?;
             }
         }

@@ -174,7 +174,7 @@ fn get_verdict(test: usize, mut output: String, flags: &Flags) -> Result<Verdict
     let verdict = Verdict::from_str(verdict.trim())?;
     match verdict {
         Verdict::OK => {
-            if !flags.contains("t") {
+            if !flags.contains("quite") {
                 println!("{}", format!("  OK:{test_string} "));
             }
         }

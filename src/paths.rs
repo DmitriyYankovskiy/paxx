@@ -9,7 +9,7 @@ pub fn build_dir() -> String { format!("{}/build", dir()) }
 pub fn config() -> String { format!("{}/config.yml", dir()) }
 pub fn hashes() -> String { format!("{}/.hashes.yml", dir()) }
 
-pub fn readme() -> String { format!("{}/README", dir()) }
+pub fn readme() -> String { format!("{}/README.md", dir()) }
 
 pub fn touch_dir(path: &String) {
     if !Path::new(path).exists() {

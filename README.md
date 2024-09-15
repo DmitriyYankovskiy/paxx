@@ -1,4 +1,4 @@
-pub const README: &str = r#"# PAXX - stress manager
+# PAXX - stress manager
 
 ---
 ## Supported Languages:
@@ -204,4 +204,6 @@ int main(int argc, char *argv[]) {
 	}
 }
 ```
-"#;
+
+
+

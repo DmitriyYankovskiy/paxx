@@ -1,18 +1,28 @@
-use std::{collections::VecDeque, env};
+use std::{collections::{HashSet, VecDeque}, env};
 
 use crate::out;
 
+pub type Flags = HashSet<String>;
 pub struct Args {
     pub args: std::collections::VecDeque<String>,
 }
 
 impl Args {
-    pub fn init() -> Self {
+    pub fn init() -> (Self, Flags) {
         let mut args = env::args().collect::<VecDeque<String>>();
+        let mut flags = Flags::new();
+        args = args.into_iter().filter(|arg| {
+            if arg.starts_with('-') {
+                flags.insert(arg[1..].to_string());
+                false                
+            } else {
+                true
+            }
+        }).collect();
         args.pop_front();
-        Self {
+        (Self {
             args,
-        }
+        }, flags)
     }
 
     pub fn get(&mut self, name: &str) -> Result<String, ()> {

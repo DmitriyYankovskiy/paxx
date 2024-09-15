@@ -1,6 +1,6 @@
 use std::{fs, io::Write, path::Path};
 
-use crate::{out, Flags};
+use crate::{out, utils::arg::Flags};
 
 pub fn create_file(path: String, text: &str, flags: &Flags) {
     if !Path::new(path.as_str()).exists() || flags.contains("re") {

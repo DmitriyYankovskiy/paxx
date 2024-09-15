@@ -23,16 +23,13 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         let mut compile_std_args = HashMap::new();
-        compile_std_args.insert(Language::Cpp, vec![
-            "-D".to_string(),
-            "STRESS".to_string()],
-        );
+        compile_std_args.insert(Language::Cpp, vec![]);
         compile_std_args.insert(Language::Rust, vec![]);
 
         let mut compile_dbg_args = HashMap::new();
         compile_dbg_args.insert(Language::Cpp, vec![
             "-D".to_string(),
-            "SOLO".to_string()],
+            "DBG".to_string()],
         );
         compile_dbg_args.insert(Language::Rust, vec![]);
         Self {

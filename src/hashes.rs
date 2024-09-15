@@ -3,7 +3,7 @@ use twox_hash::XxHash64;
 
 use std::{fs, hash::Hasher, io::{Read, Write}};
 
-use crate::{paths, Flags};
+use crate::{paths, utils::arg::Flags};
 
 const SEED: u64 = 'p' as u64 + 'a' as u64 + 'x' as u64 + 'x' as u64;
 

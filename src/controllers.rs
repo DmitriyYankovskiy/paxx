@@ -1,6 +1,6 @@
 use std::fs;
 
-use crate::{cmd::{self, stress}, config::Config, hashes::Hashes, out, paths, utils, Flags};
+use crate::{cmd::{self, stress}, config::Config, hashes::Hashes, out, paths, utils::{self, arg::Flags}};
 
 pub fn init() {
     cmd::init::all();
@@ -109,7 +109,7 @@ pub fn pat(args: &mut utils::arg::Args, flags: &Flags) -> Result<(), ()> {
                 cmd::cfg::set_test_gen(&path)?;
             }
         }
-        "edit_cfg_c++_vscode" => {
+        "edit_cfg" => {
             cmd::pat::edit_cfg_cpp_vscode(&".editorconfig".to_string(), &flags);
         }
         "solution" => {

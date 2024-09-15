@@ -6,7 +6,7 @@ use colored::{Color, Colorize};
 use std::{cmp::{max, min}, fs, io::{BufReader, Read}, str::FromStr, time::Duration, usize};
 
 use crate::{
-    config::Config, hashes::Hashes, out, paths, utils::run::{self, RunResult}, Flags, CAP
+    config::Config, hashes::Hashes, out, paths, utils::{run::{self, RunResult}, arg::Flags}, CAP
 };
 
 #[derive(Clone, Copy)]

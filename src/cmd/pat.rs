@@ -1,4 +1,4 @@
-use crate::{Flags, utils::file};
+use crate::utils::{file, arg::Flags};
 
 
 
@@ -26,49 +26,43 @@ int main(int argc, char *argv[]) {
 "#;
 const STD_PATTERN: &str =
 r#"#define PRAGMA
-
+#define _GLIBCXX_DEBUG 
 #ifdef PRAGMA
 #pragma GCC optimize("O3,unroll-loops")
 #endif
-
 #include<bits/stdc++.h>
-
 #ifdef PRAGMA
 #pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt")
 #endif
 
 using namespace std;
 using ll = long long;
-using dbl = long double;
-
+  
 #define all(v) v.begin(), v.end()
-
-#ifdef SOLO
+#ifdef DBG
 #define debug(x) std::cout << #x << " = " << x << endl;
 #else
 #define debug(x);
 #endif
 
-const int INF = 1e9 + 10;
-
 void solve() {
-
+	// TODO:
 }
 
 int main() {
-    ios::sync_with_stdio(false);
-    cin.tie(nullptr);
-
-    int t = 1;
-#ifdef SOLO
-    cin >> t;
-#endif
-    for (ll i = 0; i < t; ++i) {
-        solve();
-    }
-#ifdef SOLO
-    cout << '\n';
-#endif
+	ios::sync_with_stdio(false);
+	cin.tie(nullptr);  
+	ll t = 1;
+	
+	#ifdef DBG
+	cin >> t;
+	#endif
+	
+	for (ll i = 0; i < t; ++i) {
+		#ifdef SOLO	
+			solve();	
+		#endif	
+	}
 }
 "#;
 

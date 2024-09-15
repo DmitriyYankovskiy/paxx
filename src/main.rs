@@ -8,7 +8,7 @@ mod out;
 mod controllers;
 mod buisness;
 
-use std::{collections::HashSet, time::Instant};
+use std::time::Instant;
 
 use colored::Colorize;
 use serde::{Deserialize, Serialize};
@@ -42,8 +42,6 @@ impl Language {
     }
 }
 
-type Flags = HashSet<String>;
-
 const CAP: usize = 50_000;
 
 
@@ -54,16 +52,9 @@ fn index() {
 
 
 
-fn cmd<'a>(args: &mut Args) -> Result<(), ()> {
+fn cmd<'a>(args: &mut Args, flags: &utils::arg::Flags) -> Result<(), ()> {
     let start_time = Instant::now();
     let command = args.get("command")?;
-
-    let mut flags = Flags::new();
-    for arg in &args.args {
-        if arg.starts_with('-') {
-            flags.insert(arg[1..].to_string());
-        }
-    }
 
     println!("{}", "PAXX --- >".bold().purple());
     println!(":");
@@ -112,6 +103,6 @@ fn cmd<'a>(args: &mut Args) -> Result<(), ()> {
 }
 
 fn main() {
-    let mut args = Args::init();
-    let _ = cmd(&mut args);
+    let (mut args, flags) = Args::init();
+    let _ = cmd(&mut args, &flags);
 }

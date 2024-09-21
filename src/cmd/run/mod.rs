@@ -21,6 +21,7 @@ pub fn solution(config: &Config) -> Result<String, ()> {
     }
     let RunResult{output, duration: _} = result.unwrap();
     let output = output.unwrap();
+    println!("output:");
     print!("{}", &output.bright_blue());
     Ok(output)
 }

@@ -59,7 +59,7 @@ int main() {
 	#endif
 	
 	for (ll i = 0; i < t; ++i) {
-		#ifdef SOLO	
+		#ifdef DBG	
 			solve();	
 		#endif	
 	}

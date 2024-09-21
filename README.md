@@ -1,4 +1,4 @@
-# PAXX - stress manager
+# PAXX - stress testing manager
 
 ---
 ## Supported Languages:
@@ -204,6 +204,3 @@ int main(int argc, char *argv[]) {
 	}
 }
 ```
-
-
-

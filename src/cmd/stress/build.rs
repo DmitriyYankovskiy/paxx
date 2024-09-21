@@ -1,5 +1,5 @@
 use super::Mode;
-use crate::{buisness::build::Builder, config::Config, hashes::Hashes, utils::compile};
+use crate::{logic::build::Builder, config::Config, hashes::Hashes, utils::compile};
 pub fn all(config: &Config, hashes: &mut Hashes, mode: Mode) -> Result<(), ()> {
     let mut builder = Builder::new();
     builder

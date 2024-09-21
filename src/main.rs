@@ -6,7 +6,7 @@ mod cmd;
 mod utils;
 mod out;
 mod controllers;
-mod buisness;
+mod logic;
 
 use std::time::Instant;
 

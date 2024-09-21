@@ -9,7 +9,7 @@ fn run_cmd(path: &str) -> Result<Command, ()> {
         "exe" => Command::new(format!("./{}/{name}.{ext}", paths::build_dir())),
         "py" => {
             let mut cmd = Command::new("python3");
-            cmd.arg(format!("{}/{path}.{ext}", paths::build_dir())); 
+            cmd.arg(format!("{}/{name}.{ext}", paths::build_dir())); 
             cmd
         },
         _ => {

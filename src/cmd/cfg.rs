@@ -11,7 +11,7 @@ pub fn set_solution(path: &String) -> Result<(), ()> {
     Ok(())
 }
 
-pub fn set_test_gen(path: &String) -> Result<(), ()> {
+pub fn set_generator(path: &String) -> Result<(), ()> {
     let mut config = Config::load()?;
     config.generator_path = Some(path.clone());
     out::ok("cfg: test_gen_path", "set on:");

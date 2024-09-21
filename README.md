@@ -7,7 +7,7 @@
 - ***Python***
 
 ---
-## command: paxx *command* (*special args*) -*flags*:
+## command paxx: *command* (*special args*) -*flags*:
 - ### init
 	initialize
 

@@ -106,7 +106,7 @@ pub fn pat(args: &mut utils::arg::Args, flags: &Flags) -> Result<(), ()> {
 
             cmd::pat::gen(&path, &flags);
             if flags.contains("set") {
-                cmd::cfg::set_test_gen(&path)?;
+                cmd::cfg::set_generator(&path)?;
             }
         }
         "edit_cfg" => {
@@ -153,6 +153,15 @@ pub fn cfg(args: &mut utils::arg::Args, flags: &Flags) -> Result<(), ()> {
         "sample" => {
             cmd::cfg::set_sample(&path)?;
         }
+
+        "solution" => {
+            cmd::cfg::set_solution(&path)?;
+        }
+
+        "generator" => {
+            cmd::cfg::set_generator(&path)?;
+        }
+
         _ => {
             out::error("field", "incorrect");
             return Err(());

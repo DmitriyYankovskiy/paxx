@@ -1,4 +1,4 @@
-pub const README: &str = r#"# PAXX - stress manager
+pub const README: &str = r#"# PAXX - stress testing manager
 
 ---
 ## Supported Languages:
@@ -7,7 +7,7 @@ pub const README: &str = r#"# PAXX - stress manager
 - ***Python***
 
 ---
-## command: paxx *command* (*special args*) -*flags*:
+## command paxx: *command* (*special args*) -*flags*:
 - ### init
 	initialize
 
@@ -55,7 +55,11 @@ pub const README: &str = r#"# PAXX - stress manager
 	
 	***field***:
 	- ##### sample
-		sample for run
+		sample path
+	- ##### solution
+		solution path
+	- ##### generator
+		generator path
 	***path***: path
 
 ---

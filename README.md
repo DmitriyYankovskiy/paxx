@@ -55,7 +55,11 @@
 	
 	***field***:
 	- ##### sample
-		sample for run
+		sample path
+	- ##### solution
+		solution path
+	- ##### generator
+		generator path
 	***path***: path
 
 ---

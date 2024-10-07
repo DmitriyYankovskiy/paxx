@@ -1,4 +1,4 @@
-pub mod compile;
+pub mod build;
 pub mod run;
 pub mod file;
 

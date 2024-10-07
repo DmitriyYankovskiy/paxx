@@ -88,6 +88,9 @@ fn cmd<'a>(args: &mut Args, flags: &utils::arg::Flags) -> Result<(), ()> {
         "cfg" => {
             controllers::cfg(args, &flags)?;
         }
+        "fmt" => {
+            controllers::fmt(args, &flags);
+        }
         _ => {
             error("command", "incorrect"); 
             return Err(());

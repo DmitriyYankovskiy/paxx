@@ -18,7 +18,9 @@
 	stressing solution
 	
 	***mode***: `stressing_mode`
-	***test count***: `usize`	
+	***test count***: `usize`
+
+    (***-quite***: to not printing *OK* verdict)
 
 - ### catch
 	stressing solution up to **mistakes cap**
@@ -131,7 +133,7 @@ int main() {
 	for (ll i = 0; i < t; ++i) {
 		solve();
         #ifdef DBG	
-			cout << endl;
+			cout << '\n';
 		#endif	
 	}
 }

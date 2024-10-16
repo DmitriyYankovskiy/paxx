@@ -18,9 +18,7 @@ pub const README: &str = r#"# PAXX - stress testing manager
 	stressing solution
 	
 	***mode***: `stressing_mode`
-	***test count***: `usize`
-
-    (***-quite***: to not printing *OK* verdict)
+	***test count***: `usize`	
 
 - ### catch
 	stressing solution up to **mistakes cap**
@@ -131,9 +129,8 @@ int main() {
 	#endif
 	
 	for (ll i = 0; i < t; ++i) {
-		solve();
-        #ifdef DBG	
-			cout << '\n';
+		#ifdef DBG
+			solve();
 		#endif	
 	}
 }

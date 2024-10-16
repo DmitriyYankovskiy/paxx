@@ -46,11 +46,8 @@ const CAP: usize = 50_000;
 
 
 fn index() {
-    println!("{} {}", "code manager", "PAXX ".bold().on_purple());
+    println!("{} {}", "stress testing manager", "PAXX ".bold().on_purple());
 }
-
-
-
 
 fn cmd<'a>(args: &mut Args, flags: &utils::arg::Flags) -> Result<(), ()> {
     let start_time = Instant::now();
@@ -87,9 +84,6 @@ fn cmd<'a>(args: &mut Args, flags: &utils::arg::Flags) -> Result<(), ()> {
         }
         "cfg" => {
             controllers::cfg(args, &flags)?;
-        }
-        "fmt" => {
-            controllers::fmt(args, &flags);
         }
         _ => {
             error("command", "incorrect"); 

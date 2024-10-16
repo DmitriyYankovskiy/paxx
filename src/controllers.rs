@@ -170,16 +170,3 @@ pub fn cfg(args: &mut utils::arg::Args, flags: &Flags) -> Result<(), ()> {
 
     Ok(())
 }
-
-pub fn fmt(args: &mut utils::arg::Args, flags: &Flags) -> Result<(), ()> {
-    let path = args.try_get();
-    let path = if let Some(p) = path {
-        p
-    } else {
-        Config::load()?.get_solution_path()?
-    };
-
-    cmd::fmt::any(path);
-
-    Ok(())
-}

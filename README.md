@@ -129,8 +129,9 @@ int main() {
 	#endif
 	
 	for (ll i = 0; i < t; ++i) {
-		#ifdef SOLO	
-			solve();	
+		solve();
+        #ifdef DBG	
+			cout << endl;
 		#endif	
 	}
 }

@@ -194,10 +194,6 @@ fn reference(test_number: usize, config: &Config) -> Result<(), ()> {
     Ok(())
 }
 
-
-
-
-
 pub fn std_input_solution(test_number: usize) -> String {
     format!("{}/{}.dat", paths::solution_results_dir(), test_number)
 }

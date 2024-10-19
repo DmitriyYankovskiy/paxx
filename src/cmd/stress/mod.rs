@@ -211,9 +211,9 @@ fn checker(test_number: usize, config: &Config, flags: &Flags, input_solution: &
         return Err(());
     };
     
-    let RunResult{output, duration: _} = result;
+    let RunResult{stdout, ..} = result;
     
-    Ok(get_verdict(test_number, output.unwrap(), flags)?)
+    Ok(get_verdict(test_number, stdout.unwrap(), flags)?)
 }
 
 fn comparator(test_number: usize, config: &Config, flags: &Flags, input_solution: &String, input_reference: &String) -> Result<Verdict, ()> {
@@ -223,8 +223,8 @@ fn comparator(test_number: usize, config: &Config, flags: &Flags, input_solution
     } else {
         return Err(());
     };
-    let RunResult{output, duration: _} = result;
-    Ok(get_verdict(test_number, output.unwrap(), flags)?)
+    let RunResult{stdout, ..} = result;
+    Ok(get_verdict(test_number, stdout.unwrap(), flags)?)
 } 
 
 fn auto_comparator(test_number: usize, flags: &Flags, input_solution: &String, input_reference: &String) -> Result<Verdict, ()> {

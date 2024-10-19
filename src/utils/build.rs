@@ -6,8 +6,9 @@ use crate::{
 };
 
 pub enum Mode {
-    Std,
+    Rls,
     Dbg,
+    Hdbg,
 }
 
 fn rust(path: &str, ext: &str, config: &Config, mode: Mode) -> Result<Child, ()> {
@@ -17,8 +18,9 @@ fn rust(path: &str, ext: &str, config: &Config, mode: Mode) -> Result<Child, ()>
     let to = format!("{}/{}.{}", paths::build_dir(), path, "exe");
     let mut args = vec![from, String::from("-o"), to];
     args.append(&mut match mode {
-        Mode::Std => config.get_compile_std_args(lang),
+        Mode::Rls => config.get_compile_rls_args(lang),
         Mode::Dbg => config.get_compile_dbg_args(lang),
+        Mode::Hdbg => config.get_compile_hdbg_args(lang),
     });
 
     if let Ok(child) = Command::new("rustc")
@@ -37,8 +39,9 @@ fn cpp(name: &str, ext: &str, config: &Config, mode: Mode) -> Result<Child, ()> 
     let to = format!("{}/{}.{}", paths::build_dir(), name, "exe");
     let mut args = vec![from, String::from("-o"), to];
     args.append(&mut match mode {
-        Mode::Std => config.get_compile_std_args(lang),
+        Mode::Rls => config.get_compile_rls_args(lang),
         Mode::Dbg => config.get_compile_dbg_args(lang),
+        Mode::Hdbg => config.get_compile_hdbg_args(lang),
     });
 
     if let Ok(child) = Command::new("g++")

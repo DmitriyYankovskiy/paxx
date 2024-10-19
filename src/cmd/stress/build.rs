@@ -4,7 +4,7 @@ pub fn all(config: &Config, hashes: &mut Hashes, mode: Mode) -> Result<(), ()> {
     let mut builder = Builder::new();
     builder
         .generator(config, hashes)?
-        .solution(config, hashes, build::Mode::Std)?;
+        .solution(config, hashes, build::Mode::Rls)?;
     match mode {
         Mode::Check => {
             builder

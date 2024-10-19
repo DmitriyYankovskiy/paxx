@@ -136,7 +136,7 @@ pub fn run(flags: &Flags) -> Result<(), ()> {
     let config = Config::load()?;
 
     let mut hashes = Hashes::connect(&flags);
-    cmd::run::build::all(&config, &mut hashes)?;
+    cmd::run::build::all(&config, &mut hashes, flags)?;
 
     cmd::run::solution(&Config::load()?)?;
     Ok(())

@@ -19,9 +19,17 @@ pub fn solution(config: &Config) -> Result<String, ()> {
 
         return Err(())
     }
-    let RunResult{output, duration: _} = result.unwrap();
-    let output = output.unwrap();
-    println!("output:");
-    print!("{}", &output.bright_blue());
+    let RunResult{stdout, stderr, duration, ..} = result.unwrap();
+    let output = stdout.unwrap();
+    println!("{}", "stdout:".bright_blue());
+    print!("{}", &output);
+
+    if let Some(stderr) = stderr {
+        println!("{}", "stderr:".bright_red());
+        print!("{}", stderr);
+    }
+
+    println!("{} {}", "executing time:".bright_green(), duration.as_secs_f32());
+
     Ok(output)
 }

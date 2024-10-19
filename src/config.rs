@@ -16,22 +16,30 @@ pub struct Config {
 
     pub sample_path: Option<String>,
 
-    compile_std_args: HashMap<Language, Vec<String>>,
+    compile_rls_args: HashMap<Language, Vec<String>>,
     compile_dbg_args: HashMap<Language, Vec<String>>,
+
+    compile_hdbg_add_args: HashMap<Language, Vec<String>>,
 }
 
 impl Default for Config {
     fn default() -> Self {
-        let mut compile_std_args = HashMap::new();
-        compile_std_args.insert(Language::Cpp, vec![]);
-        compile_std_args.insert(Language::Rust, vec![]);
+        let compile_rls_args = HashMap::new();
 
         let mut compile_dbg_args = HashMap::new();
         compile_dbg_args.insert(Language::Cpp, vec![
-            "-D".to_string(),
-            "DBG".to_string()],
-        );
-        compile_dbg_args.insert(Language::Rust, vec![]);
+            "-DDBG".to_string(),
+        ]);
+
+        let mut compile_hdbg_add_args = HashMap::new();
+        compile_hdbg_add_args.insert(Language::Cpp, vec![
+            "-fsanitize=address,undefined,bounds".to_string(),
+            "-g".to_string(),
+            "-D_GLIBCXX_DEBUG".to_string(),
+            "-Wall".to_string(),
+            "-Wextra".to_string(),
+        ]);
+
         Self {
             solution_path: None,
             reference_path: None,            
@@ -41,8 +49,9 @@ impl Default for Config {
             sample_path: None,
             checker_path: None,
 
-            compile_std_args,
+            compile_rls_args,
             compile_dbg_args,
+            compile_hdbg_add_args,
         }
     }
 }
@@ -154,8 +163,8 @@ impl Config {
     
     
     
-    pub fn get_compile_std_args(&self, lang: Language) -> Vec<String> {
-        if let Some(args) = self.compile_std_args.get(&lang) {
+    pub fn get_compile_rls_args(&self, lang: Language) -> Vec<String> {
+        if let Some(args) = self.compile_rls_args.get(&lang) {
             args.clone()
         } else {
             Vec::new()
@@ -165,6 +174,16 @@ impl Config {
     pub fn get_compile_dbg_args(&self, lang: Language) -> Vec<String> {
         if let Some(args) = self.compile_dbg_args.get(&lang) {
             args.clone()
+        } else {
+            Vec::new()
+        }
+    }
+
+    pub fn get_compile_hdbg_args(&self, lang: Language) -> Vec<String> {
+        if let Some(args) = self.compile_hdbg_add_args.get(&lang) {
+            let mut args = args.clone(); 
+            args.append(&mut self.get_compile_dbg_args(lang));
+            args
         } else {
             Vec::new()
         }

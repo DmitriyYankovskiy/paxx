@@ -7,7 +7,7 @@ use crate::{paths, utils::arg::Flags};
 
 const SEED: u64 = 'p' as u64 + 'a' as u64 + 'x' as u64 + 'x' as u64;
 
-pub fn get_hash_file(path: &String) -> u64 {
+pub fn get_hash_file(path: &String, args: &Vec<String>) -> u64 {
     let mut file = fs::File::open(path).unwrap();
 
     let mut hasher = XxHash64::with_seed(SEED);
@@ -18,7 +18,11 @@ pub fn get_hash_file(path: &String) -> u64 {
             break;
         }
 
-        hasher.write(&buf[..len]);        
+        hasher.write(&buf[..len]);
+    }
+
+    for arg in args {
+        hasher.write(arg.as_bytes());
     }
 
     hasher.finish()

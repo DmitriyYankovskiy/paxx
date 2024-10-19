@@ -4,13 +4,29 @@ use crate::{
     config::Config,
     hashes::{get_hash_file, Hashes},
     out,
-    utils::build::{self, any},
+    utils::build::{self, any}, Language,
 };
 
 
 
 pub struct Builder {
     childs: Vec<Option<(String, Option<Child>)>>,
+}
+
+fn get_args(lang: Language, mode: build::Mode, config: &Config) -> Vec<String> {
+    match mode {
+        build::Mode::Rls => {
+            config.get_compile_rls_args(lang)
+        },
+        build::Mode::Dbg => {
+            config.get_compile_dbg_args(lang)
+        },
+        build::Mode::Hdbg => {
+            let mut args = config.get_compile_dbg_args(lang);
+            args.append(&mut config.get_compile_hdbg_add_args(lang));
+            args
+        },
+    }
 }
 
 impl Builder {
@@ -41,14 +57,16 @@ impl Builder {
 
     pub fn solution(&mut self, config: &Config, hashes: &mut Hashes, compile_mode: build::Mode) -> Result<&mut Self, ()> {
         let path = config.get_solution_path()?;
-        let hash = get_hash_file(&path);
+        let lang = Language::from_path(&path)?;
+        let args = get_args(lang, compile_mode, config);
+        let hash = get_hash_file(&path, &args);
 
         if Some(hash) != hashes.solution {
             hashes.tests_count = 0;
             hashes.solution_results_count = 0;
             hashes.reference_results_count = 0;
 
-            let res = any(&path, config, compile_mode)?;
+            let res = any(&path, &args, lang)?;
             let res = Some((path, res));
             self.childs.push(res);
             hashes.solution = Some(hash);            
@@ -58,14 +76,16 @@ impl Builder {
 
     pub fn generator(&mut self, config: &Config, hashes: &mut Hashes) -> Result<&mut Self, ()> {
         let path = config.get_generator_path()?;
-        let hash = get_hash_file(&path);
+        let lang = Language::from_path(&path)?;
+        let args = get_args(lang, build::Mode::Rls, config);
+        let hash = get_hash_file(&path, &args);
 
         if Some(hash) != hashes.generator {
             hashes.tests_count = 0;
             hashes.solution_results_count = 0;
             hashes.reference_results_count = 0;
 
-            let res = any(&path, config, build::Mode::Rls)?;
+            let res = any(&path, &args, lang)?;
             let res = Some((path, res));
             self.childs.push(res);
             hashes.generator = Some(hash);
@@ -75,12 +95,14 @@ impl Builder {
 
     pub fn reference(&mut self, config: &Config, hashes: &mut Hashes) -> Result<&mut Self, ()> {
         let path = config.get_reference_path()?;
-        let hash = get_hash_file(&path);
+        let lang = Language::from_path(&path)?;
+        let args = get_args(lang, build::Mode::Rls, config);
+        let hash = get_hash_file(&path, &args);
 
         if Some(hash) != hashes.reference {
             hashes.reference_results_count = 0;
 
-            let res = any(&path, config, build::Mode::Rls)?;
+            let res = any(&path, &args, lang)?;
             let res = Some((path, res));
             self.childs.push(res);
             hashes.reference = Some(hash);
@@ -90,10 +112,12 @@ impl Builder {
 
     pub fn comparator(&mut self, config: &Config, hashes: &mut Hashes) -> Result<&mut Self, ()> {
         let path = config.get_comparator_path()?;
-        let hash = get_hash_file(&path);
+        let lang = Language::from_path(&path)?;
+        let args = get_args(lang, build::Mode::Rls, config);
+        let hash = get_hash_file(&path, &args);
 
         if Some(hash) != hashes.comparator {
-            let res = any(&path, config, build::Mode::Rls)?;
+            let res = any(&path, &args, lang)?;
             let res = Some((path, res));
             self.childs.push(res);
             hashes.comparator = Some(hash);
@@ -103,10 +127,12 @@ impl Builder {
 
     pub fn checker(&mut self, config: &Config, hashes: &mut Hashes) -> Result<&mut Self, ()> {
         let path = config.get_checker_path()?;
-        let hash = get_hash_file(&path);
+        let lang = Language::from_path(&path)?;
+        let args = get_args(lang, build::Mode::Rls, config);
+        let hash = get_hash_file(&path, &args);
 
         if Some(hash) != hashes.checker {
-            let res = any(&path, config, build::Mode::Rls)?;
+            let res = any(&path, &args, lang)?;
             let res = Some((path, res));
             self.childs.push(res);
             hashes.checker = Some(hash);

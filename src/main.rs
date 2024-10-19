@@ -34,6 +34,14 @@ impl Language {
         }
     }
 
+    pub fn from_path(s: &str) -> Result<Self, ()> {
+        if let Some((_, ext)) = s.split_once('.') {
+            Self::from_ext(ext)
+        } else {
+            Err(())
+        }
+    }
+
     pub fn get_executable_ext(&self) -> &'static str {
         match self {
             Self::Cpp | Self::Rust => "exe",

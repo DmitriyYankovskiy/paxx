@@ -1,9 +1,7 @@
 use std::{fs, process::{Child, Command}};
 use crate::Language::{self, Cpp, Python, Rust};
 
-use crate::{
-    config::Config, paths
-};
+use crate::paths;
 
 pub enum Mode {
     Rls,
@@ -11,17 +9,10 @@ pub enum Mode {
     Hdbg,
 }
 
-fn rust(path: &str, ext: &str, config: &Config, mode: Mode) -> Result<Child, ()> {
-    let lang: Language = Language::Rust;
-
+fn rust(path: &str, ext: &str, mut args: Vec<String>) -> Result<Child, ()> {
     let from = format!("{path}.{ext}");
     let to = format!("{}/{}.{}", paths::build_dir(), path, "exe");
-    let mut args = vec![from, String::from("-o"), to];
-    args.append(&mut match mode {
-        Mode::Rls => config.get_compile_rls_args(lang),
-        Mode::Dbg => config.get_compile_dbg_args(lang),
-        Mode::Hdbg => config.get_compile_hdbg_args(lang),
-    });
+    args.append(&mut vec![from, String::from("-o"), to]);
 
     if let Ok(child) = Command::new("rustc")
     .args(args)
@@ -32,18 +23,10 @@ fn rust(path: &str, ext: &str, config: &Config, mode: Mode) -> Result<Child, ()>
     }
 }
 
-fn cpp(name: &str, ext: &str, config: &Config, mode: Mode) -> Result<Child, ()> {
-    let lang: Language = Language::Cpp;
-
+fn cpp(name: &str, ext: &str, mut args: Vec<String>) -> Result<Child, ()> {
     let from = format!("{name}.{ext}");
     let to = format!("{}/{}.{}", paths::build_dir(), name, "exe");
-    let mut args = vec![from, String::from("-o"), to];
-    args.append(&mut match mode {
-        Mode::Rls => config.get_compile_rls_args(lang),
-        Mode::Dbg => config.get_compile_dbg_args(lang),
-        Mode::Hdbg => config.get_compile_hdbg_args(lang),
-    });
-
+    args.append(&mut vec![from, String::from("-o"), to]);
     if let Ok(child) = Command::new("g++")
     .args(args)
     .spawn() {
@@ -58,13 +41,11 @@ pub fn copy_file(path: &str) -> Result<(), ()> {
     Ok(())
 }
 
-pub fn any(path: &String, config: &Config, mode: Mode) -> Result<Option<Child>, ()> {
+pub fn any(path: &String, args: &Vec<String>, lang: Language) -> Result<Option<Child>, ()> {
     let (name, ext) = path.split_once(".").unwrap();
-    let lang = Language::from_ext(ext)?;
-
     Ok(match lang {
-        Cpp => Some(cpp(name, ext, config, mode)?),
-        Rust => Some(rust(name, ext, config, mode)?),
+        Cpp => Some(cpp(name, ext,args.clone())?),
+        Rust => Some(rust(name, ext, args.clone())?),
         Python => {
             copy_file(path)?;
             None

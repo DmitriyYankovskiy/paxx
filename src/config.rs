@@ -179,11 +179,9 @@ impl Config {
         }
     }
 
-    pub fn get_compile_hdbg_args(&self, lang: Language) -> Vec<String> {
+    pub fn get_compile_hdbg_add_args(&self, lang: Language) -> Vec<String> {
         if let Some(args) = self.compile_hdbg_add_args.get(&lang) {
-            let mut args = args.clone(); 
-            args.append(&mut self.get_compile_dbg_args(lang));
-            args
+            args.clone()
         } else {
             Vec::new()
         }

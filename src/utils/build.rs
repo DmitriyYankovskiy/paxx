@@ -31,7 +31,7 @@ fn cpp(name: &str, ext: &str, mut args: Vec<String>) -> Result<Child, ()> {
     .args(args)
     .spawn() {
         Ok(child)
-    } else {
+    } else { 
         Err(())
     }
 }
